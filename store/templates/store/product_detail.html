@@ -232,6 +232,7 @@ function toggleWishlist(productId, btn) {
 }
 function openTrailer(url) {
     const iframe = document.getElementById('trailerIframe');
+    url = url.replace('watch?v=', 'embed/').split('&')[0];
     iframe.src = url + '?autoplay=1';
     new bootstrap.Modal(document.getElementById('trailerModal')).show();
     document.getElementById('trailerModal').addEventListener('hidden.bs.modal', function() {
