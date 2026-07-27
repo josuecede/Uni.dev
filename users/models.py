@@ -25,10 +25,10 @@ class CustomUser(AbstractUser):
         verbose_name_plural = 'Usuarios'
 
     def is_admin(self):
-        return self.role == self.Role.ADMIN
+        return self.role == self.Role.ADMIN or self.is_superuser
 
     def is_manager(self):
-        return self.role == self.Role.MANAGER
+        return self.role == self.Role.MANAGER or (self.is_staff and not self.is_superuser)
 
     def is_customer(self):
-        return self.role == self.Role.CUSTOMER
+        return self.role == self.Role.CUSTOMER and not self.is_staff
