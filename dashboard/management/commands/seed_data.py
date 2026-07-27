@@ -1,0 +1,192 @@
+import io
+import os
+import random
+from datetime import date, timedelta
+from django.core.management.base import BaseCommand
+from django.core.files.base import ContentFile
+from django.conf import settings
+from PIL import Image, ImageDraw, ImageFont
+
+from dashboard.models import Platform, Genre, Category, Product, ProductImage
+from users.models import CustomUser
+
+PLATFORMS = [
+    {'name': 'PC', 'slug': 'pc', 'icon': 'bi-pc-display', 'color': '#1a1a2e'},
+    {'name': 'PlayStation 5', 'slug': 'ps5', 'icon': 'bi-playstation', 'color': '#003791'},
+    {'name': 'Xbox Series X|S', 'slug': 'xbox', 'icon': 'bi-xbox', 'color': '#107c10'},
+    {'name': 'Nintendo Switch', 'slug': 'switch', 'icon': 'bi-nintendo-switch', 'color': '#e60012'},
+    {'name': 'Android', 'slug': 'android', 'icon': 'bi-phone', 'color': '#3ddc84'},
+]
+
+GENRES = [
+    {'name': 'Acción', 'slug': 'accion'},
+    {'name': 'Aventura', 'slug': 'aventura'},
+    {'name': 'RPG', 'slug': 'rpg'},
+    {'name': 'Shooter', 'slug': 'shooter'},
+    {'name': 'Estrategia', 'slug': 'estrategia'},
+    {'name': 'Deportes', 'slug': 'deportes'},
+    {'name': 'Carreras', 'slug': 'carreras'},
+    {'name': 'Simulación', 'slug': 'simulacion'},
+    {'name': 'Terror', 'slug': 'terror'},
+    {'name': 'Mundo Abierto', 'slug': 'mundo-abierto'},
+]
+
+CATEGORIES = [
+    {'name': 'Juegos Premium', 'description': 'Juegos de pago con contenido completo'},
+    {'name': 'Free to Play', 'description': 'Juegos gratuitos con micropagos'},
+    {'name': 'Indie', 'description': 'Juegos independientes'},
+    {'name': 'Clásicos', 'description': 'Juegos retro y clásicos'},
+    {'name': 'VR', 'description': 'Realidad virtual'},
+]
+
+GAMES = [
+    {'name': 'Cyberpunk 2077', 'description': 'Sumérgete en Night City, una megalópolis obsesionada con el poder, el glamour y las modificaciones corporales. Juega como V, un mercenario forajido en busca de un implante único que es la llave de la inmortalidad.', 'price': 59.99, 'discount': 40, 'developer': 'CD Projekt Red', 'publisher': 'CD Projekt', 'release': '2020-12-10', 'rating': 8.6, 'video': 'https://www.youtube.com/watch?v=8X2kIfS6fb8', 'platforms': ['pc', 'ps5', 'xbox'], 'genres': ['rpg', 'accion', 'mundo-abierto'], 'category': 'Juegos Premium'},
+    {'name': 'Elden Ring', 'description': 'Álzate, Sinluz, y adéntrate en las Tierras Intermedias. Un mundo de fantasía épica creado por Hidetaka Miyazaki y George R.R. Martin.', 'price': 69.99, 'discount': 25, 'developer': 'FromSoftware', 'publisher': 'Bandai Namco', 'release': '2022-02-25', 'rating': 9.8, 'video': 'https://www.youtube.com/watch?v=AKXiKBvzpGM', 'platforms': ['pc', 'ps5', 'xbox'], 'genres': ['rpg', 'accion', 'aventura'], 'category': 'Juegos Premium'},
+    {'name': 'God of War Ragnarök', 'description': 'Kratos y Atreus se embarcan en un viaje épico a través de los nueve reinos en busca de respuestas.', 'price': 69.99, 'discount': 20, 'developer': 'Santa Monica Studio', 'publisher': 'Sony Interactive Entertainment', 'release': '2022-11-09', 'rating': 9.6, 'video': 'https://www.youtube.com/watch?v=EE-4GvjKc5Y', 'platforms': ['ps5', 'pc'], 'genres': ['accion', 'aventura'], 'category': 'Juegos Premium'},
+    {'name': 'The Legend of Zelda: Tears of the Kingdom', 'description': 'Explora un mundo lleno de maravillas mientras Link descubre los secretos de Hyrule en esta épica aventura.', 'price': 69.99, 'discount': 10, 'developer': 'Nintendo EPD', 'publisher': 'Nintendo', 'release': '2023-05-12', 'rating': 9.9, 'video': 'https://www.youtube.com/watch?v=uHGShqcAIlI', 'platforms': ['switch'], 'genres': ['aventura', 'mundo-abierto'], 'category': 'Juegos Premium'},
+    {'name': 'Red Dead Redemption 2', 'description': 'Vive la épica historia del forajido Arthur Morgan en el Salvaje Oeste. Un mundo abierto inmersivo con una narrativa inolvidable.', 'price': 59.99, 'discount': 50, 'developer': 'Rockstar Games', 'publisher': 'Rockstar Games', 'release': '2018-10-26', 'rating': 9.7, 'video': 'https://www.youtube.com/watch?v=eaW0tYpxyp0', 'platforms': ['pc', 'ps5', 'xbox'], 'genres': ['accion', 'aventura', 'mundo-abierto'], 'category': 'Juegos Premium'},
+    {'name': 'Spider-Man 2', 'description': 'Peter Parker y Miles Morales se unen para enfrentar a Venom y proteger la ciudad de Nueva York.', 'price': 69.99, 'discount': 15, 'developer': 'Insomniac Games', 'publisher': 'Sony Interactive Entertainment', 'release': '2023-10-20', 'rating': 9.5, 'video': 'https://www.youtube.com/watch?v=nq2GXiGBqjI', 'platforms': ['ps5'], 'genres': ['accion', 'aventura', 'mundo-abierto'], 'category': 'Juegos Premium'},
+    {'name': 'Baldur\'s Gate 3', 'description': 'Reúne a tu grupo y regresa a los Reinos Olvidados en esta historia de amistad, traición y sacrificio.', 'price': 59.99, 'discount': 10, 'developer': 'Larian Studios', 'publisher': 'Larian Studios', 'release': '2023-08-03', 'rating': 9.9, 'video': 'https://www.youtube.com/watch?v=1T22wNmf0Mg', 'platforms': ['pc', 'ps5', 'xbox'], 'genres': ['rpg', 'estrategia'], 'category': 'Juegos Premium'},
+    {'name': 'Call of Duty: Modern Warfare III', 'description': 'La amenaza continúa mientras el Capitán Price y la Task Force 141 enfrentan a Vladimir Makarov.', 'price': 69.99, 'discount': 30, 'developer': 'Sledgehammer Games', 'publisher': 'Activision', 'release': '2023-11-10', 'rating': 7.8, 'video': 'https://www.youtube.com/watch?v=xfDk7YvVjPk', 'platforms': ['pc', 'ps5', 'xbox'], 'genres': ['shooter', 'accion'], 'category': 'Juegos Premium'},
+    {'name': 'FIFA 24', 'description': 'La experiencia de fútbol más auténtica con nuevas mecánicas de juego, modos mejorados y los mejores equipos del mundo.', 'price': 69.99, 'discount': 35, 'developer': 'EA Sports', 'publisher': 'Electronic Arts', 'release': '2024-09-27', 'rating': 8.5, 'video': 'https://www.youtube.com/watch?v=V2OwTw8K0Vg', 'platforms': ['pc', 'ps5', 'xbox', 'switch'], 'genres': ['deportes'], 'category': 'Juegos Premium'},
+    {'name': 'Forza Motorsport', 'description': 'Vive la velocidad con el simulador de carreras más avanzado. Más de 500 coches y 20 circuitos.', 'price': 69.99, 'discount': 30, 'developer': 'Turn 10 Studios', 'publisher': 'Xbox Game Studios', 'release': '2023-10-10', 'rating': 9.2, 'video': 'https://www.youtube.com/watch?v=0Y_-iM5nXqI', 'platforms': ['pc', 'xbox'], 'genres': ['carreras', 'simulacion'], 'category': 'Juegos Premium'},
+    {'name': 'Horizon Forbidden West', 'description': 'Aloy se aventura en el Oeste Prohibido para descubrir los secretos que amenazan la vida en la Tierra.', 'price': 59.99, 'discount': 35, 'developer': 'Guerrilla Games', 'publisher': 'Sony Interactive Entertainment', 'release': '2022-02-18', 'rating': 9.3, 'video': 'https://www.youtube.com/watch?v=Lq594XmpPBg', 'platforms': ['ps5', 'pc'], 'genres': ['accion', 'aventura', 'rpg'], 'category': 'Juegos Premium'},
+    {'name': 'Resident Evil 4 Remake', 'description': 'Revive la icónica aventura de survival horror con gráficos renovados y nuevas mecánicas de juego.', 'price': 59.99, 'discount': 40, 'developer': 'Capcom', 'publisher': 'Capcom', 'release': '2023-03-24', 'rating': 9.4, 'video': 'https://www.youtube.com/watch?v=9s6ZgC6S0ys', 'platforms': ['pc', 'ps5', 'xbox'], 'genres': ['terror', 'accion', 'aventura'], 'category': 'Juegos Premium'},
+    {'name': 'Starfield', 'description': 'Explora el vasto espacio exterior en esta épica aventura de rol de Bethesda Game Studios.', 'price': 69.99, 'discount': 30, 'developer': 'Bethesda Game Studios', 'publisher': 'Bethesda Softworks', 'release': '2023-09-06', 'rating': 8.5, 'video': 'https://www.youtube.com/watch?v=zmb2FVGvn8Q', 'platforms': ['pc', 'xbox'], 'genres': ['rpg', 'aventura', 'mundo-abierto'], 'category': 'Juegos Premium'},
+    {'name': 'Mortal Kombat 1', 'description': 'Un nuevo universo de kombate te espera. Gráficos impresionantes y un sistema de lucha revolucionario.', 'price': 69.99, 'discount': 40, 'developer': 'NetherRealm Studios', 'publisher': 'Warner Bros. Games', 'release': '2023-09-19', 'rating': 8.7, 'video': 'https://www.youtube.com/watch?v=UZ6eFEjFfJ0', 'platforms': ['pc', 'ps5', 'xbox', 'switch'], 'genres': ['accion'], 'category': 'Juegos Premium'},
+    {'name': 'Assassin\'s Creed Mirage', 'description': 'Vive la historia de Basim en el Bagdad del siglo IX en esta vuelta a las raíces de la saga.', 'price': 49.99, 'discount': 40, 'developer': 'Ubisoft Bordeaux', 'publisher': 'Ubisoft', 'release': '2023-10-05', 'rating': 8.8, 'video': 'https://www.youtube.com/watch?v=x55hSHiIl2I', 'platforms': ['pc', 'ps5', 'xbox'], 'genres': ['accion', 'aventura'], 'category': 'Juegos Premium'},
+    {'name': 'Hogwarts Legacy', 'description': 'Vive tu propia aventura en el Mundo Mágico. Explora Hogwarts y descubre secretos ocultos.', 'price': 59.99, 'discount': 40, 'developer': 'Avalanche Software', 'publisher': 'Warner Bros. Games', 'release': '2023-02-10', 'rating': 9.0, 'video': 'https://www.youtube.com/watch?v=1O6Qstncpnc', 'platforms': ['pc', 'ps5', 'xbox', 'switch'], 'genres': ['rpg', 'aventura', 'mundo-abierto'], 'category': 'Juegos Premium'},
+    {'name': 'Gran Turismo 7', 'description': 'La experiencia de conducción definitiva con más de 400 coches y 100 circuitos.', 'price': 69.99, 'discount': 30, 'developer': 'Polyphony Digital', 'publisher': 'Sony Interactive Entertainment', 'release': '2022-03-04', 'rating': 9.1, 'video': 'https://www.youtube.com/watch?v=a3Z7zEcYnOM', 'platforms': ['ps5'], 'genres': ['carreras', 'simulacion'], 'category': 'Juegos Premium'},
+    {'name': 'Stray', 'description': 'Juega como un gato callejero en una ciudad cyberpunk llena de robots y misterios.', 'price': 29.99, 'discount': 20, 'developer': 'BlueTwelve Studio', 'publisher': 'Annapurna Interactive', 'release': '2022-07-19', 'rating': 9.0, 'video': 'https://www.youtube.com/watch?v=38GZ3cD7XG0', 'platforms': ['pc', 'ps5', 'xbox', 'switch'], 'genres': ['aventura', 'indie'], 'category': 'Indie'},
+    {'name': 'Hollow Knight', 'description': 'Adéntrate en el reino de Hallownest, un mundo subterráneo lleno de insectos y misterios.', 'price': 14.99, 'discount': 30, 'developer': 'Team Cherry', 'publisher': 'Team Cherry', 'release': '2017-02-24', 'rating': 9.5, 'video': 'https://www.youtube.com/watch?v=UAO2urG23S4', 'platforms': ['pc', 'ps5', 'xbox', 'switch'], 'genres': ['aventura', 'accion', 'indie'], 'category': 'Indie'},
+    {'name': 'Stardew Valley', 'description': 'Deja la ciudad y vive tus sueños agrícolas en el campo. Cultiva, cría animales y haz amigos.', 'price': 14.99, 'discount': 0, 'developer': 'ConcernedApe', 'publisher': 'ConcernedApe', 'release': '2016-02-26', 'rating': 9.8, 'video': 'https://www.youtube.com/watch?v=ot7u5Vl3lJc', 'platforms': ['pc', 'ps5', 'xbox', 'switch', 'android'], 'genres': ['simulacion', 'indie'], 'category': 'Indie'},
+    {'name': 'Celeste', 'description': 'Ayuda a Madeline a escalar la Montaña Celeste en este desafiante y conmovedor juego de plataformas.', 'price': 19.99, 'discount': 30, 'developer': 'Maddy Makes Games', 'publisher': 'Maddy Makes Games', 'release': '2018-01-25', 'rating': 9.6, 'video': 'https://www.youtube.com/watch?v=70d9irlxiB4', 'platforms': ['pc', 'ps5', 'xbox', 'switch'], 'genres': ['accion', 'indie'], 'category': 'Indie'},
+    {'name': 'Counter-Strike 2', 'description': 'El shooter táctico por excelencia renace con gráficos mejorados y nuevas mecánicas.', 'price': 0, 'discount': 0, 'developer': 'Valve', 'publisher': 'Valve', 'release': '2023-09-27', 'rating': 9.1, 'video': 'https://www.youtube.com/watch?v=8yrX-piJuHM', 'platforms': ['pc'], 'genres': ['shooter', 'accion', 'estrategia'], 'category': 'Free to Play'},
+    {'name': 'Fortnite', 'description': 'El battle royale más popular del mundo. Construye, lucha y sé el último en pie.', 'price': 0, 'discount': 0, 'developer': 'Epic Games', 'publisher': 'Epic Games', 'release': '2017-07-25', 'rating': 8.9, 'video': 'https://www.youtube.com/watch?v=WJW-bzXZM8M', 'platforms': ['pc', 'ps5', 'xbox', 'switch', 'android'], 'genres': ['shooter', 'accion'], 'category': 'Free to Play'},
+    {'name': 'Genshin Impact', 'description': 'Explora el mundo de Teyvat y descubre sus secretos en este RPG de acción gratuito.', 'price': 0, 'discount': 0, 'developer': 'miHoYo', 'publisher': 'miHoYo', 'release': '2020-09-28', 'rating': 9.3, 'video': 'https://www.youtube.com/watch?v=HLUY1nICQRY', 'platforms': ['pc', 'ps5', 'android'], 'genres': ['rpg', 'accion', 'mundo-abierto'], 'category': 'Free to Play'},
+    {'name': 'Grand Theft Auto V', 'description': 'Tres criminales, una ciudad. Vive la historia de Michael, Franklin y Trevor en Los Santos.', 'price': 29.99, 'discount': 50, 'developer': 'Rockstar North', 'publisher': 'Rockstar Games', 'release': '2013-09-17', 'rating': 9.8, 'video': 'https://www.youtube.com/watch?v=hvoD7ehZPcM', 'platforms': ['pc', 'ps5', 'xbox'], 'genres': ['accion', 'aventura', 'mundo-abierto'], 'category': 'Clásicos'},
+]
+
+COLORS = [
+    '#6c5ce7', '#00cec9', '#fd79a8', '#e17055', '#00b894',
+    '#fdcb6e', '#e84393', '#6ab04c', '#eb4d4b', '#686de0',
+    '#30336b', '#be2edd', '#4834d4', '#130f40', '#535c68',
+    '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22',
+    '#34495e', '#16a085', '#27ae60', '#2980b9', '#8e44ad',
+]
+
+
+def generate_placeholder_image(name, color, size=(800, 450)):
+    img = Image.new('RGB', size, color=color)
+    draw = ImageDraw.Draw(img)
+    try:
+        font = ImageFont.truetype("arial.ttf", 40)
+        small_font = ImageFont.truetype("arial.ttf", 24)
+    except (IOError, OSError):
+        font = ImageFont.load_default()
+        small_font = ImageFont.load_default()
+
+    lines = []
+    words = name.split()
+    current = ''
+    for w in words:
+        if len(current + ' ' + w) <= 25:
+            current = (current + ' ' + w).strip()
+        else:
+            lines.append(current)
+            current = w
+    if current:
+        lines.append(current)
+
+    y_start = size[1] // 2 - (len(lines) * 25)
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        tw = bbox[2] - bbox[0]
+        draw.text(((size[0] - tw) // 2, y_start), line, fill='white', font=font)
+        y_start += 50
+
+    draw.text((20, size[1] - 40), 'GameStore', fill='rgba(255,255,255,128)', font=small_font)
+
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    return buf.getvalue()
+
+
+def generate_small_image(name, color):
+    return generate_placeholder_image(name, color, (400, 225))
+
+
+class Command(BaseCommand):
+    help = 'Seed database with platforms, genres, categories, and games'
+
+    def handle(self, *args, **options):
+        self.stdout.write('Creando plataformas...')
+        for data in PLATFORMS:
+            Platform.objects.get_or_create(slug=data['slug'], defaults=data)
+            self.stdout.write(f'  + {data["name"]}')
+
+        self.stdout.write('Creando géneros...')
+        for data in GENRES:
+            Genre.objects.get_or_create(slug=data['slug'], defaults=data)
+            self.stdout.write(f'  + {data["name"]}')
+
+        self.stdout.write('Creando categorías...')
+        for data in CATEGORIES:
+            Category.objects.get_or_create(name=data['name'], defaults=data)
+            self.stdout.write(f'  + {data["name"]}')
+
+        self.stdout.write('Creando juegos...')
+        for i, game_data in enumerate(GAMES):
+            color = COLORS[i % len(COLORS)]
+            cat = Category.objects.get(name=game_data['category'])
+            product, created = Product.objects.get_or_create(
+                name=game_data['name'],
+                defaults={
+                    'description': game_data['description'],
+                    'price': game_data['price'],
+                    'discount_percent': game_data['discount'],
+                    'stock': random.randint(50, 500),
+                    'category': cat,
+                    'developer': game_data['developer'],
+                    'publisher': game_data['publisher'],
+                    'release_date': game_data['release'],
+                    'rating': game_data['rating'],
+                    'video_url': game_data['video'],
+                    'is_active': True,
+                    'is_featured': i < 6,
+                    'is_new_release': i < 3,
+                    'format': 'DIGITAL',
+                }
+            )
+            if created:
+                img_data = generate_placeholder_image(game_data['name'], color)
+                product.image.save(f'product_{product.id}.png', ContentFile(img_data))
+                product.save()
+                self.stdout.write(f'  + {game_data["name"]} (${game_data["price"]})')
+            else:
+                self.stdout.write(f'  = {game_data["name"]} (ya existe)')
+
+            product.platforms.set([Platform.objects.get(slug=s) for s in game_data['platforms']])
+            product.genres.set([Genre.objects.get(slug=s) for s in game_data['genres']])
+
+            if created:
+                for gi in range(random.randint(3, 6)):
+                    suffix = chr(97 + gi)
+                    img_data = generate_small_image(f'{game_data["name"]} - Vista {gi + 1}', color)
+                    pi = ProductImage(product=product, is_primary=gi == 0)
+                    pi.image.save(f'product_{product.id}_gallery_{gi}.png', ContentFile(img_data))
+                    pi.save()
+
+        admin_user = CustomUser.objects.filter(username='admin').first()
+        if admin_user:
+            admin_user.first_name = 'Josue'
+            admin_user.last_name = 'Cedeño'
+            admin_user.email = 'admin@gamestore.com'
+            admin_user.phone_number = '+593 98 765 4321'
+            admin_user.bio = 'Administrador de GameStore. Apasionado por los videojuegos y la tecnología.'
+            admin_user.address = 'Manta, Ecuador'
+            admin_user.role = 'ADMIN'
+            admin_user.save()
+            self.stdout.write(f'  + Perfil de admin actualizado')
+
+        self.stdout.write(self.style.SUCCESS('Seed completado exitosamente!'))

@@ -1,0 +1,63 @@
+{% extends 'starter.html' %}
+{% load static %}
+{% block title %}Plataformas{% endblock %}
+{% block page_title %}Plataformas{% endblock %}
+{% block breadcrumb %}Plataformas{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Listado de Plataformas</h3>
+    <div class="card-tools">
+      <a href="{% url 'dashboard:platform_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Nueva</a>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped">
+      <thead>
+        <tr><th>Nombre</th><th>Icono</th><th>Color</th><th>Slug</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        {% for p in platforms %}
+        <tr>
+          <td><span class="badge" style="background:{{ p.color }};color:#fff;font-size:14px;padding:6px 12px"><i class="bi {{ p.icon }}"></i> {{ p.name }}</span></td>
+          <td><code>{{ p.icon }}</code></td>
+          <td><span class="badge" style="background:{{ p.color }};color:#fff">{{ p.color }}</span></td>
+          <td><code>{{ p.slug }}</code></td>
+          <td>
+            <a href="{% url 'dashboard:platform_edit' p.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+            <button class="btn btn-sm btn-danger" onclick="confirmDelete({{ p.id }}, '{{ p.name|escapejs }}')"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center">No hay plataformas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Eliminar Plataforma</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div>
+      <div class="modal-body">¿Eliminar <strong id="deleteName"></strong>?</div>
+      <div class="modal-footer">
+        <form method="post" id="deleteForm">
+          {% csrf_token %}
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function confirmDelete(id, name) {
+  document.getElementById('deleteName').textContent = name;
+  document.getElementById('deleteForm').action = "{% url 'dashboard:platform_delete' 0 %}".replace('/0/', '/' + id + '/');
+  $('#deleteModal').modal('show');
+}
+</script>
+{% endblock %}

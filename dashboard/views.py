@@ -8,7 +8,7 @@ from django.utils import timezone
 from .decorators import staff_required, admin_required
 from .models import Product, ProductImage, Category, Order, OrderItem
 from store.models import Coupon
-from .forms import ProductForm, CategoryForm, OrderStatusForm, AdminUserCreateForm, AdminUserEditForm, AdminPasswordForm
+from .forms import ProductForm, PlatformForm, CategoryForm, OrderStatusForm, AdminUserCreateForm, AdminUserEditForm, AdminPasswordForm
 from users.models import CustomUser
 
 
@@ -140,6 +140,48 @@ def category_delete(request, pk):
         category.delete()
         messages.success(request, f'Categoría "{category.name}" eliminada.')
     return redirect('dashboard:category_list')
+
+
+@staff_required
+def platform_list(request):
+    platforms = Platform.objects.all()
+    return render(request, 'pages/tables/platform_list.html', {'platforms': platforms})
+
+
+@staff_required
+def platform_create(request):
+    if request.method == 'POST':
+        form = PlatformForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Plataforma creada.')
+            return redirect('dashboard:platform_list')
+    else:
+        form = PlatformForm()
+    return render(request, 'pages/forms/general.html', {'form': form, 'title': 'Nueva Plataforma'})
+
+
+@staff_required
+def platform_edit(request, pk):
+    platform = get_object_or_404(Platform, id=pk)
+    if request.method == 'POST':
+        form = PlatformForm(request.POST, instance=platform)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Plataforma actualizada.')
+            return redirect('dashboard:platform_list')
+    else:
+        form = PlatformForm(instance=platform)
+    return render(request, 'pages/forms/general.html', {'form': form, 'title': 'Editar Plataforma'})
+
+
+@staff_required
+def platform_delete(request, pk):
+    platform = get_object_or_404(Platform, id=pk)
+    if request.method == 'POST':
+        platform.delete()
+        messages.success(request, f'Plataforma "{platform.name}" eliminada.')
+    return redirect('dashboard:platform_list')
 
 
 @admin_required

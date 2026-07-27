@@ -96,6 +96,12 @@
                 </a>
               </li>
               <li class="nav-item">
+                <a href="{% url 'dashboard:platform_list' %}" class="nav-link {% if 'platform' in request.resolver_match.url_name %}active{% endif %}">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>Plataformas</p>
+                </a>
+              </li>
+              <li class="nav-item">
                 <a href="{% url 'dashboard:category_list' %}" class="nav-link {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
                   <i class="far fa-circle nav-icon"></i>
                   <p>Categorías</p>

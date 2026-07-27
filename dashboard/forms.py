@@ -48,6 +48,24 @@ class ProductForm(forms.ModelForm):
         }
 
 
+class PlatformForm(forms.ModelForm):
+    class Meta:
+        model = Platform
+        fields = ('name', 'slug', 'icon', 'color')
+        labels = {
+            'name': 'Nombre',
+            'slug': 'Slug (URL)',
+            'icon': 'Icono (clase Bootstrap)',
+            'color': 'Color (hex)',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: PlayStation 5'}),
+            'slug': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: ps5'}),
+            'icon': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: bi-playstation'}),
+            'color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+        }
+
+
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
