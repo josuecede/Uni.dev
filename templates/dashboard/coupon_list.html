@@ -1,0 +1,54 @@
+{% extends 'starter.html' %}
+{% load static %}
+{% block title %}Cupones - Dashboard{% endblock %}
+{% block page_title %}Cupones de Descuento{% endblock %}
+{% block breadcrumb %}Cupones{% endblock %}
+{% block content %}
+<div class="row mb-2">
+    <div class="col-sm-6">
+        <a href="{% url 'dashboard:coupon_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo Cupón</a>
+    </div>
+</div>
+<div class="row justify-content-center">
+<div class="col-lg-10">
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Descuento</th>
+                    <th>Válido Hasta</th>
+                    <th>Usos</th>
+                    <th>Estado</th>
+                    <th class="text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for coupon in coupons %}
+                <tr>
+                    <td><strong>{{ coupon.code }}</strong></td>
+                    <td>{{ coupon.discount_percent }}%</td>
+                    <td>{{ coupon.valid_until|date:'d/m/Y H:i' }}</td>
+                    <td>{{ coupon.used_count }}/{{ coupon.max_uses }}</td>
+                    <td>
+                        {% if coupon.is_valid %}
+                        <span class="badge badge-success">Activo</span>
+                        {% else %}
+                        <span class="badge badge-danger">Expirado</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <a href="{% url 'dashboard:coupon_edit' coupon.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center py-4">No hay cupones registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+</div>
+{% endblock %}

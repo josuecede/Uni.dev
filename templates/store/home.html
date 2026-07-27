@@ -1,0 +1,143 @@
+{% extends 'base_cliente.html' %}
+{% load static %}
+{% block title %}GameStore - Tu Tienda de Videojuegos{% endblock %}
+{% block content %}
+
+{% if featured %}
+<section class="hero-section">
+    <div class="container hero-content">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="mb-3">
+                    <span class="hero-badge" style="background:var(--gaming-accent2);">RECIÉN LANZADO</span>
+                    {% for platform in featured.0.platforms.all %}
+                    <span class="hero-badge" style="background:{{ platform.color }};">{{ platform.name }}</span>
+                    {% endfor %}
+                </div>
+                <h1 class="hero-title mb-3">{{ featured.0.name }}</h1>
+                <p class="text-muted mb-4">{{ featured.0.description|truncatechars:150 }}</p>
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    {% if featured.0.has_discount %}
+                    <span class="price-original fs-4">${{ featured.0.price }}</span>
+                    <span class="discount-badge fs-6">-{{ featured.0.discount_percent }}%</span>
+                    {% endif %}
+                    <span class="price-final fs-2">${{ featured.0.final_price|floatformat:2 }}</span>
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="#" class="btn btn-gaming btn-lg"><i class="bi bi-cart-plus"></i> Comprar Ahora</a>
+                    <a href="#" class="btn btn-outline-gaming btn-lg">Ver Detalles</a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center mt-4 mt-lg-0">
+                <img src="{% if featured.0.image %}{{ featured.0.image.url }}{% else %}https://placehold.co/500x600/1a1a3a/fff?text=Portada{% endif %}" class="img-fluid rounded-4 shadow-lg" style="max-height:500px;" alt="{{ featured.0.name }}">
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="py-5">
+    <div class="container">
+        <h2 class="section-title">Elige tu Plataforma</h2>
+        <div class="row g-3">
+            {% for platform in platforms %}
+            <div class="col-6 col-md-3 col-lg">
+                <div class="platform-pick-card">
+                    <div class="platform-pick-icon" style="color:{{ platform.color }}"><i class="{{ platform.icon }}"></i></div>
+                    <div class="platform-pick-name">{{ platform.name }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center text-muted">Próximamente más plataformas</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% if new_releases %}
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title">Últimos Lanzamientos</h2>
+            <a href="#" class="section-link">Ver todos <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="row g-4">
+            {% for product in new_releases %}
+            <div class="col-6 col-md-4 col-lg-3">
+                {% include 'includes/game_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if top_sellers %}
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title">Más Vendidos</h2>
+            <a href="#" class="section-link">Ver todos <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="row g-4">
+            {% for product in top_sellers %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="position-relative h-100">
+                    {% if forloop.counter <= 3 %}
+                    <span class="position-absolute top-0 start-0 p-2 medal" style="z-index:2;">{% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}</span>
+                    {% endif %}
+                    {% include 'includes/game_card.html' %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if on_sale %}
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title">🔥 Ofertas Relámpago</h2>
+            <div class="flash-timer">
+                <div class="timer-block"><div class="timer-number" id="hours">02</div><div class="timer-label">Horas</div></div>
+                <div class="timer-block"><div class="timer-number" id="minutes">45</div><div class="timer-label">Min</div></div>
+                <div class="timer-block"><div class="timer-number" id="seconds">30</div><div class="timer-label">Seg</div></div>
+            </div>
+        </div>
+        <div class="row g-4">
+            {% for product in on_sale %}
+            <div class="col-6 col-md-4 col-lg-4">
+                {% include 'includes/game_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<script>
+// Toast notification function
+function showToast(msg) {
+    const toast = new bootstrap.Toast(document.getElementById('cartToast'));
+    document.getElementById('toastMessage').textContent = msg;
+    toast.show();
+}
+
+// Flash sale timer
+function startTimer(duration) {
+    let timer = duration, h, m, s;
+    setInterval(() => {
+        h = parseInt(timer / 3600, 10);
+        m = parseInt((timer % 3600) / 60, 10);
+        s = parseInt(timer % 60, 10);
+        document.getElementById('hours').textContent = String(h).padStart(2, '0');
+        document.getElementById('minutes').textContent = String(m).padStart(2, '0');
+        document.getElementById('seconds').textContent = String(s).padStart(2, '0');
+        if (--timer < 0) timer = duration;
+    }, 1000);
+}
+startTimer(9945);
+</script>
+{% endblock %}

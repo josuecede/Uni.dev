@@ -1,0 +1,93 @@
+{% extends 'starter.html' %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-info">
+      <div class="inner">
+        <h3>${{ total_revenue_month|floatformat:2 }}</h3>
+        <p>Ingresos (Mes)</p>
+      </div>
+      <div class="icon"><i class="ion ion-bag"></i></div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-success">
+      <div class="inner">
+        <h3>${{ total_revenue_year|floatformat:2 }}</h3>
+        <p>Ingresos (Año)</p>
+      </div>
+      <div class="icon"><i class="ion ion-stats-bars"></i></div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-warning">
+      <div class="inner">
+        <h3>{{ orders_count }}</h3>
+        <p>Pedidos / ${{ avg_ticket|floatformat:2 }}</p>
+      </div>
+      <div class="icon"><i class="ion ion-person-add"></i></div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-danger">
+      <div class="inner">
+        <h3>{{ low_stock }}</h3>
+        <p>Stock Crítico</p>
+      </div>
+      <div class="icon"><i class="ion ion-pie-graph"></i></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-chart-pie mr-1"></i>Tendencia de Ventas</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="salesTrendChart" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Ventas por Categoría</h3>
+      </div>
+      <div class="card-body">
+        <canvas id="categoryChart" height="160"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const mesMap = {'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'};
+const trendData = {{ sales_trend|safe }};
+if (trendData.length) {
+  new Chart(document.getElementById('salesTrendChart'), {
+    type: 'line', data: {
+      labels: trendData.map(d => mesMap[d.month] || d.month),
+      datasets: [{ label: 'Ventas ($)', data: trendData.map(d => parseFloat(d.total)), borderColor: '#007bff', tension: 0.3, fill: true, backgroundColor: 'rgba(0,123,255,.1)' }]
+    }
+  });
+}
+const catData = {{ sales_by_category|safe }};
+if (catData.length) {
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut', data: {
+      labels: catData.map(d => d.product__category__name || 'Sin categoría'),
+      datasets: [{ data: catData.map(d => parseFloat(d.total)), backgroundColor: ['#007bff','#6f42c1','#e83e8c','#fd7e14','#28a745','#17a2b8'] }]
+    }
+  });
+}
+</script>
+{% endblock %}

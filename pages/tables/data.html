@@ -1,0 +1,67 @@
+{% extends 'starter.html' %}
+{% load static %}
+{% block title %}Productos{% endblock %}
+{% block page_title %}Productos{% endblock %}
+{% block breadcrumb %}Productos{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Listado de Productos</h3>
+    <div class="card-tools">
+      <a href="{% url 'dashboard:product_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Nuevo Producto</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <table id="productTable" class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Precio</th>
+          <th>Descuento</th>
+          <th>Stock</th>
+          <th>Plataformas</th>
+          <th>Categoría</th>
+          <th>Activo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td>{{ product.name }}</td>
+          <td>${{ product.price }}</td>
+          <td>{% if product.discount_percent %}<span class="badge badge-danger">-{{ product.discount_percent }}%</span>{% else %}-{% endif %}</td>
+          <td>{{ product.stock }}</td>
+          <td>{% for p in product.platforms.all %}<span class="badge badge-secondary">{{ p.name }}</span> {% endfor %}</td>
+          <td>{{ product.category.name|default:'-' }}</td>
+          <td>
+            <form method="post" style="display:inline">
+              {% csrf_token %}
+              <input type="hidden" name="product_id" value="{{ product.id }}">
+              <button type="submit" name="toggle_active" class="btn btn-sm {% if product.is_active %}btn-success{% else %}btn-secondary{% endif %}">
+                {% if product.is_active %}Activo{% else %}Inactivo{% endif %}
+              </button>
+            </form>
+          </td>
+          <td><a href="{% url 'dashboard:product_edit' product.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center">No hay productos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'plugins/datatables-bs4/css/dataTables.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'plugins/datatables-responsive/css/responsive.bootstrap4.min.css' %}">
+{% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'plugins/datatables-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'plugins/datatables-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script>
+  $(function () { $('#productTable').DataTable({ responsive: true, language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' } }); });
+</script>
+{% endblock %}

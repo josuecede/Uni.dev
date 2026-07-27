@@ -1,0 +1,70 @@
+{% extends 'base_cliente.html' %}
+{% load static %}
+{% block title %}Mis Favoritos - GameStore{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-heart-fill" style="color:var(--gaming-danger);"></i> Mis Favoritos</h2>
+    {% if products %}
+    <div class="row g-4">
+        {% for product in products %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="game-card">
+                <a href="{% url 'store:product_detail' product.id %}" class="text-decoration-none position-relative d-block">
+                    <button class="wishlist-btn active" onclick="event.preventDefault(); event.stopPropagation(); toggleWishlist({{ product.id }}, this)" data-product-id="{{ product.id }}">
+                        <i class="bi bi-heart-fill"></i>
+                    </button>
+                    <img src="{% if product.image %}{{ product.image.url }}{% else %}https://placehold.co/300x220/1a1a3a/fff?text=Sin+Imagen{% endif %}" class="game-card-img" alt="{{ product.name }}">
+                </a>
+                <div class="game-card-body">
+                    <div class="mb-2">
+                        {% for platform in product.platforms.all %}
+                        <span class="badge" style="background:{{ platform.color }};">{{ platform.name }}</span>
+                        {% endfor %}
+                    </div>
+                    <a href="{% url 'store:product_detail' product.id %}" class="text-decoration-none text-dark">
+                        <h6 class="game-card-title">{{ product.name|truncatechars:40 }}</h6>
+                    </a>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="price-final">${{ product.final_price|floatformat:2 }}</div>
+                        <button class="btn-add-cart" onclick="addToCart({{ product.id }})"><i class="bi bi-cart-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg viewBox="0 0 120 120" fill="none">
+            <path d="M60 100 C20 70 10 40 30 25 C45 15 60 25 60 25 C60 25 75 15 90 25 C110 40 100 70 60 100Z" stroke="currentColor" stroke-width="2" opacity="0.25" fill="none"/>
+            <path d="M60 90 L60 45" stroke="currentColor" stroke-width="2" opacity="0.15"/>
+            <circle cx="60" cy="38" r="4" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+            <path d="M50 28 Q60 20 70 28" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+        </svg>
+        <h4>Sin favoritos</h4>
+        <p>No tienes juegos favoritos aún. Explora el catálogo.</p>
+        <a href="{% url 'store:catalog' %}" class="btn btn-accent">Explorar Catálogo</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleWishlist(productId, btn) {
+    fetch('{% url "store:wishlist_toggle" %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({product_id: productId})
+    }).then(r => r.json()).then(data => {
+        if (!data.in_wishlist) {
+            btn.closest('.col-6').remove();
+            showToast('Eliminado de favoritos');
+            if (!document.querySelector('.game-card')) {
+                location.reload();
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base_cliente.html' %}
+{% block title %}Compra Exitosa - GameStore{% endblock %}
+{% block content %}
+<div class="container py-4 text-center checkout-page">
+    <div class="checkout-steps">
+        <div class="checkout-step completed">
+            <div class="step-number"><i class="bi bi-check"></i></div>
+            <div class="step-label">Carrito</div>
+        </div>
+        <div class="checkout-step completed">
+            <div class="step-number"><i class="bi bi-check"></i></div>
+            <div class="step-label">Checkout</div>
+        </div>
+        <div class="checkout-step active">
+            <div class="step-number"><i class="bi bi-check"></i></div>
+            <div class="step-label">Confirmación</div>
+        </div>
+    </div>
+
+    <div class="reveal visible">
+        <div class="mb-4 floating">
+            <i class="bi bi-check-circle-fill text-success" style="font-size:5rem;"></i>
+        </div>
+        <h2 class="mb-3">¡Compra exitosa!</h2>
+        <p class="text-muted mb-4">Gracias por tu compra, {{ order.customer.username }}.</p>
+        <div class="card bg-light border mx-auto" style="max-width:500px;">
+            <div class="card-body">
+                <p><strong>Código de orden:</strong> <span class="text-primary">#ORD-{{ order.id }}</span></p>
+                <p><strong>Total pagado:</strong> ${{ order.total|floatformat:2 }}</p>
+                <p><strong>Fecha:</strong> {{ order.created_at|date:'d/m/Y H:i' }}</p>
+            </div>
+        </div>
+        {% if keys %}
+        <div class="card bg-light border mx-auto mt-3" style="max-width:500px;">
+            <div class="card-header border"><h5 class="mb-0">🔑 Tus claves digitales</h5></div>
+            <div class="card-body">
+                {% for key in keys %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border">
+                    <span>{{ key.product.name }}</span>
+                    <span class="text-success fw-mono">{{ key.key }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        <div class="mt-4 d-flex gap-3 justify-content-center">
+            <a href="{% url 'store:order_detail' order.id %}" class="btn btn-outline-accent">Ver detalle del pedido</a>
+            <a href="{% url 'store:catalog' %}" class="btn btn-accent">Seguir comprando</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

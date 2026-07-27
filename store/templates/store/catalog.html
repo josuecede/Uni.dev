@@ -1,0 +1,178 @@
+{% extends 'base_cliente.html' %}
+{% load static %}
+{% block title %}Catálogo - GameStore{% endblock %}
+{% block content %}
+<div class="container py-4 catalog-page">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="card bg-light border mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-funnel"></i> Filtros</h5>
+                    <form method="get" id="filterForm">
+                        {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+
+                        <h6 class="text-muted mb-2">Plataforma</h6>
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="radio" name="platform" value="" id="p_all"
+                                {% if not request.GET.platform %}checked{% endif %} onchange="this.form.submit()">
+                            <label class="form-check-label small" for="p_all">Todas</label>
+                        </div>
+                        {% for platform in platforms %}
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="radio" name="platform" value="{{ platform.slug }}" id="p{{ platform.id }}"
+                                {% if request.GET.platform == platform.slug %}checked{% endif %} onchange="this.form.submit()">
+                            <label class="form-check-label small" for="p{{ platform.id }}">
+                                <span style="color:{{ platform.color }};">●</span> {{ platform.name }}
+                            </label>
+                        </div>
+                        {% endfor %}
+
+                        <h6 class="text-muted mt-3 mb-2">Categoría</h6>
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="radio" name="category" value="" id="cat_all"
+                                {% if not request.GET.category %}checked{% endif %} onchange="this.form.submit()">
+                            <label class="form-check-label small" for="cat_all">Todas</label>
+                        </div>
+                        {% for cat in categories %}
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="radio" name="category" value="{{ cat.id }}" id="cat{{ cat.id }}"
+                                {% if request.GET.category == cat.id|stringformat:'s' %}checked{% endif %} onchange="this.form.submit()">
+                            <label class="form-check-label small" for="cat{{ cat.id }}">{{ cat.name }}</label>
+                        </div>
+                        {% endfor %}
+
+                        <h6 class="text-muted mt-3 mb-2">Formato</h6>
+                        <select name="format" class="form-select form-select-sm bg-light text-dark border" onchange="this.form.submit()">
+                            <option value="">Todos</option>
+                            <option value="DIGITAL" {% if request.GET.format == 'DIGITAL' %}selected{% endif %}>Clave Digital</option>
+                            <option value="PHYSICAL" {% if request.GET.format == 'PHYSICAL' %}selected{% endif %}>Físico</option>
+                        </select>
+
+                        <h6 class="text-muted mt-3 mb-2">Precio</h6>
+                        <div class="d-flex gap-2">
+                            <input type="number" name="min_price" class="form-control form-control-sm bg-light text-dark border" placeholder="Min" value="{{ request.GET.min_price }}" onchange="this.form.submit()">
+                            <input type="number" name="max_price" class="form-control form-control-sm bg-light text-dark border" placeholder="Max" value="{{ request.GET.max_price }}" onchange="this.form.submit()">
+                        </div>
+
+                        <input type="hidden" name="page" value="1">
+                        <button type="submit" class="btn btn-accent w-100 mt-3 btn-sm">Aplicar filtros</button>
+                        <a href="{% url 'store:catalog' %}" class="btn btn-outline-secondary w-100 mt-2 btn-sm">Limpiar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Catálogo <small class="text-muted fs-6">({{ products.paginator.count }} juegos)</small></h4>
+                <select name="sort" form="filterForm" class="form-select form-select-sm bg-light text-dark border w-auto" onchange="this.form.submit()">
+                    <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Alfabético</option>
+                    <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Menor precio</option>
+                    <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Mayor precio</option>
+                    <option value="newest" {% if request.GET.sort == 'newest' %}selected{% endif %}>Más recientes</option>
+                    <option value="rating" {% if request.GET.sort == 'rating' %}selected{% endif %}>Mejor valorados</option>
+                </select>
+            </div>
+            {% if request.GET.q %}
+            <p class="text-muted mb-3">Resultados para: <strong>"{{ request.GET.q }}"</strong></p>
+            {% endif %}
+            <div class="row g-4">
+                {% for product in products %}
+                <div class="col-6 col-md-4 col-lg-3 reveal tilt-card">
+                    <div class="game-card ripple">
+                        <a href="{% url 'store:product_detail' product.id %}" class="text-decoration-none position-relative d-block">
+                            <button class="wishlist-btn {% if product.id in wishlist_ids %}active{% endif %}" onclick="event.preventDefault(); event.stopPropagation(); toggleWishlist({{ product.id }}, this)" data-product-id="{{ product.id }}">
+                                <i class="bi {% if product.id in wishlist_ids %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                            </button>
+                            <img src="{% if product.image %}{{ product.image.url }}{% else %}https://placehold.co/300x220/1a1a3a/fff?text=Sin+Imagen{% endif %}" class="game-card-img" alt="{{ product.name }}" style="cursor:pointer;">
+                        </a>
+                        <div class="game-card-body">
+                            <div class="mb-2">
+                                {% for platform in product.platforms.all %}
+                                <span class="badge" style="background:{{ platform.color }};">{{ platform.name }}</span>
+                                {% endfor %}
+                            </div>
+                            <a href="{% url 'store:product_detail' product.id %}" class="text-decoration-none text-dark">
+                                <h6 class="game-card-title">{{ product.name|truncatechars:40 }}</h6>
+                            </a>
+                            <div class="mb-2 small text-muted">
+                                {% for genre in product.genres.all|slice:":2" %}{{ genre.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                · {{ product.get_format_display }}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    {% if product.has_discount %}
+                                    <span class="price-original">${{ product.price }}</span>
+                                    <span class="discount-badge">-{{ product.discount_percent }}%</span>
+                                    {% endif %}
+                                    <div class="price-final">${{ product.final_price|floatformat:2 }}</div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn-add-cart" onclick="openQuickView({{ product.id }})" title="Vista rápida"><i class="bi bi-eye"></i></button>
+                                    <button class="btn-add-cart" onclick="addToCart({{ product.id }})"><i class="bi bi-cart-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 120 120" fill="none">
+                            <circle cx="60" cy="60" r="50" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" opacity="0.3"/>
+                            <circle cx="60" cy="45" r="15" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4"/>
+                            <path d="M35 85 Q60 65 85 85" stroke="currentColor" stroke-width="2" fill="none" opacity="0.3"/>
+                            <path d="M45 30 L50 40" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+                            <path d="M75 30 L70 40" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+                        </svg>
+                        <h4>Sin resultados</h4>
+                        <p>No se encontraron juegos con esos filtros.</p>
+                        <a href="{% url 'store:catalog' %}" class="btn btn-accent">Limpiar filtros</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if products.paginator.num_pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"><i class="bi bi-chevron-double-left"></i></a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"><i class="bi bi-chevron-left"></i></a></li>
+                    {% endif %}
+                    {% for num in products.paginator.page_range %}
+                    <li class="page-item {% if num == products.number %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if products.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"><i class="bi bi-chevron-right"></i></a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ products.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"><i class="bi bi-chevron-double-right"></i></a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleWishlist(productId, btn) {
+    fetch('{% url "store:wishlist_toggle" %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({product_id: productId})
+    }).then(r => r.json()).then(data => {
+        const icon = btn.querySelector('i');
+        if (data.in_wishlist) {
+            icon.className = 'bi bi-heart-fill';
+            btn.classList.add('active');
+        } else {
+            icon.className = 'bi bi-heart';
+            btn.classList.remove('active');
+        }
+    });
+}
+</script>
+{% endblock %}

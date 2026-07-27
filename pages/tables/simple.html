@@ -1,0 +1,61 @@
+{% extends 'starter.html' %}
+{% load static %}
+{% block title %}Categorías{% endblock %}
+{% block page_title %}Categorías{% endblock %}
+{% block breadcrumb %}Categorías{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Listado de Categorías</h3>
+    <div class="card-tools">
+      <a href="{% url 'dashboard:category_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Nueva</a>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped">
+      <thead>
+        <tr><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr>
+          <td>{{ cat.name }}</td>
+          <td>{{ cat.description|default:'-' }}</td>
+          <td>
+            <a href="{% url 'dashboard:category_edit' cat.id %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+            <button class="btn btn-sm btn-danger" onclick="confirmDelete({{ cat.id }}, '{{ cat.name|escapejs }}')"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-center">No hay categorías.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Eliminar Categoría</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div>
+      <div class="modal-body">¿Eliminar <strong id="deleteName"></strong>?</div>
+      <div class="modal-footer">
+        <form method="post" id="deleteForm">
+          {% csrf_token %}
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function confirmDelete(id, name) {
+  document.getElementById('deleteName').textContent = name;
+  document.getElementById('deleteForm').action = "{% url 'dashboard:category_delete' 0 %}".replace('/0/', '/' + id + '/');
+  $('#deleteModal').modal('show');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,282 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GameStore{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/store.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="/">GameStore</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'store:catalog' %}">Catálogo</a></li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'store:library' %}"><i class="bi bi-controller"></i> Biblioteca</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'store:order_history' %}"><i class="bi bi-truck"></i> Pedidos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'store:wishlist' %}"><i class="bi bi-heart"></i> Favoritos</a></li>
+                    {% endif %}
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+                        <i class="bi bi-moon-stars-fill"></i>
+                    </button>
+                    <form method="get" action="{% url 'store:catalog' %}" class="d-flex">
+                        <input type="text" name="q" class="form-control form-control-sm" placeholder="Buscar juegos..." value="{{ request.GET.q }}" style="width:200px;">
+                    </form>
+                    <a class="cart-icon" onclick="toggleCart()">
+                        <i class="bi bi-cart3 fs-5"></i>
+                        <span class="cart-badge" id="cartCount">{{ cart_count|default:'0' }}</span>
+                    </a>
+                    {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">{{ user.username }}</a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person"></i> Mi Cuenta</a></li>
+                            <li><a class="dropdown-item" href="{% url 'store:library' %}"><i class="bi bi-book"></i> Biblioteca</a></li>
+                            <li><a class="dropdown-item" href="{% url 'store:order_history' %}"><i class="bi bi-box"></i> Pedidos</a></li>
+                            <li><a class="dropdown-item" href="{% url 'store:wishlist' %}"><i class="bi bi-heart"></i> Favoritos</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'store:login' %}" class="btn btn-outline-accent btn-sm">Iniciar Sesión</a>
+                    <a href="{% url 'store:register' %}" class="btn btn-accent btn-sm">Registrarse</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% if messages %}
+    <div class="container mt-2">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+
+    <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+    <div class="cart-drawer" id="cartDrawer">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="bi bi-cart3"></i> Carrito</h5>
+            <button class="btn-close" onclick="toggleCart()"></button>
+        </div>
+        <div id="cartItems"></div>
+        <div class="mt-3 pt-3 border-top">
+            <div class="d-flex justify-content-between mb-2">
+                <strong>Total:</strong> <strong id="cartTotal">$0.00</strong>
+            </div>
+            <a href="{% url 'store:checkout' %}" class="btn btn-accent w-100">Proceder al pago</a>
+        </div>
+    </div>
+
+    <footer class="footer-custom">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6"><h5 class="text-light">GameStore</h5><p>Tu tienda de videojuegos.</p></div>
+                <div class="col-md-3"><h6 class="text-light">Soporte</h6><ul class="list-unstyled"><li>FAQ</li><li>Contacto</li></ul></div>
+                <div class="col-md-3"><h6 class="text-light">Redes</h6><div class="d-flex gap-3 fs-5"><i class="bi bi-twitter-x"></i><i class="bi bi-discord"></i><i class="bi bi-instagram"></i></div></div>
+            </div>
+            <hr style="border-color:rgba(255,255,255,.1);">
+            <p class="text-center small mb-0">&copy; 2026 GameStore.</p>
+        </div>
+    </footer>
+
+    <div class="toast-container">
+        <div id="cartToast" class="toast align-items-center text-bg-success border-0" role="alert">
+            <div class="d-flex"><div class="toast-body" id="toastMessage"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>
+        </div>
+    </div>
+
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Volver arriba">
+        <i class="bi bi-chevron-up"></i>
+    </button>
+
+    <div class="quick-view-overlay" id="quickViewOverlay" onclick="closeQuickView(event)">
+        <div class="quick-view-modal" id="quickViewModal">
+            <div class="d-flex justify-content-end p-3 pb-0">
+                <button class="btn-close" onclick="closeQuickView()"></button>
+            </div>
+            <div id="quickViewContent" class="quick-view-body"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function getCSRFToken() {
+        return document.cookie.split('; ').find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+    }
+    function showToast(msg) {
+        const toastEl = document.getElementById('cartToast');
+        if (!toastEl) return;
+        document.getElementById('toastMessage').textContent = msg;
+        new bootstrap.Toast(toastEl).show();
+    }
+    function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        document.querySelector('.theme-toggle i').className = next === 'dark' ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+        {% if user.is_authenticated %}
+        fetch('{% url "set_theme" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: 'theme=' + next
+        });
+        {% endif %}
+    }
+    (function() {
+        {% if user.is_authenticated %}
+        const saved = '{{ user.theme }}' || 'dark';
+        {% else %}
+        const saved = localStorage.getItem('theme') || 'dark';
+        {% endif %}
+        document.documentElement.setAttribute('data-theme', saved);
+    })();
+    function addToCart(productId, quantity) {
+        quantity = quantity || 1;
+        fetch('/store/cart/add/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
+            body: JSON.stringify({product_id: productId, quantity: parseInt(quantity)})
+        }).then(r => r.json()).then(data => {
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+            if (data.success) {
+                document.getElementById('cartCount').textContent = data.count;
+                showToast('Agregado al carrito');
+                loadCart();
+            }
+        }).catch(() => { showToast('Error al agregar al carrito.'); });
+    }
+    function toggleCart() {
+        document.getElementById('cartOverlay').classList.toggle('show');
+        document.getElementById('cartDrawer').classList.toggle('show');
+        if (document.getElementById('cartDrawer').classList.contains('show')) loadCart();
+    }
+    function loadCart() {
+        fetch('/store/cart/data/').then(r => r.json()).then(data => {
+            let html = '';
+            data.items.forEach(item => {
+                html += '<div class="cart-item">' +
+                    '<img src="' + (item.image || 'https://placehold.co/60x60/e9ecef/adb5bd?text=N/A') + '" class="cart-item-img">' +
+                    '<div class="cart-item-info">' +
+                        '<div class="cart-item-title">' + item.name + '</div>' +
+                        '<div class="small text-muted">' + item.platforms.map(function(p) { return p.name; }).join(', ') + '</div>' +
+                        '<div class="cart-item-price">$' + item.subtotal + '</div>' +
+                    '</div>' +
+                    '<div class="d-flex align-items-center gap-2">' +
+                        '<button class="btn btn-sm btn-outline-secondary" onclick="updateCart(' + item.id + ', \'decrease\')">-</button>' +
+                        '<span>' + item.quantity + '</span>' +
+                        '<button class="btn btn-sm btn-outline-secondary" onclick="updateCart(' + item.id + ', \'increase\')">+</button>' +
+                    '</div>' +
+                '</div>';
+            });
+            document.getElementById('cartItems').innerHTML = html || '<p class="text-muted">Carrito vacío</p>';
+            document.getElementById('cartTotal').textContent = '$' + data.total;
+        });
+    }
+    function updateCart(itemId, action) {
+        fetch('/store/cart/update/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
+            body: JSON.stringify({item_id: itemId, action: action})
+        }).then(r => r.json()).then(function(data) {
+            if (data.deleted) { document.getElementById('cartCount').textContent = data.count; }
+            loadCart();
+        });
+    }
+    function initEnhancements() {
+        document.querySelectorAll('.ripple').forEach(el => {
+            el.addEventListener('mousedown', function(e) {
+                const rect = this.getBoundingClientRect();
+                this.style.setProperty('--rx', ((e.clientX - rect.left) / rect.width * 100) + '%');
+                this.style.setProperty('--ry', ((e.clientY - rect.top) / rect.height * 100) + '%');
+            });
+        });
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        document.querySelectorAll('.tilt-card .game-card').forEach(card => {
+            card.addEventListener('mousemove', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+                this.style.setProperty('--rx', (-y * 12) + 'deg');
+                this.style.setProperty('--ry', (x * 12) + 'deg');
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.setProperty('--rx', '0deg');
+                this.style.setProperty('--ry', '0deg');
+            });
+        });
+        window.addEventListener('scroll', function() {
+            const btn = document.getElementById('backToTop');
+            if (btn) btn.classList.toggle('visible', window.scrollY > 400);
+        }, { passive: true });
+        document.querySelectorAll('[data-countdown]').forEach(el => {
+            const end = new Date(el.dataset.countdown).getTime();
+            function tick() {
+                const diff = end - Date.now();
+                if (diff <= 0) { el.textContent = 'Terminado'; return; }
+                const d = Math.floor(diff / 86400000);
+                const h = Math.floor((diff % 86400000) / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                el.textContent = (d ? d + 'd ' : '') + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+            }
+            tick();
+            setInterval(tick, 1000);
+        });
+    }
+    function closeQuickView(e) {
+        if (e && e.target !== e.currentTarget) return;
+        document.getElementById('quickViewOverlay').classList.remove('show');
+        document.getElementById('quickViewContent').innerHTML = '';
+    }
+    function openQuickView(productId) {
+        fetch('/store/product/quick/' + productId + '/')
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('quickViewContent').innerHTML = html;
+                document.getElementById('quickViewOverlay').classList.add('show');
+                document.body.style.overflow = 'hidden';
+            });
+        document.getElementById('quickViewOverlay').addEventListener('click', function() {
+            document.body.style.overflow = '';
+        }, { once: true });
+    }
+    document.addEventListener('DOMContentLoaded', initEnhancements);
+    </script>
+    {% block extra_js %}{% endblock %}
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

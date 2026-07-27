@@ -1,0 +1,37 @@
+{% extends 'starter.html' %}
+{% load static %}
+{% block title %}Barra de Ofertas{% endblock %}
+{% block page_title %}Barra de Ofertas{% endblock %}
+{% block breadcrumb %}Ofertas{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card card-primary">
+      <div class="card-header"><h3 class="card-title">Barra de Ofertas</h3></div>
+      <div class="card-body">
+        {% if banner and banner.is_active %}
+        <div class="alert" style="background-color: {{ banner.bg_color|default:'#17a2b8' }}; color:#fff;">
+          {% if banner.link %}<a href="{{ banner.link }}" class="text-white">{% endif %}
+          {{ banner.message }}
+          {% if banner.link %}</a>{% endif %}
+        </div>
+        {% else %}
+        <div class="alert alert-secondary">La barra está desactivada.</div>
+        {% endif %}
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="form-group">
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<small class="text-muted">{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<div class="text-danger">{{ error }}</div>{% endfor %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

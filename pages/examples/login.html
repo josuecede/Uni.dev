@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - Iniciar Sesión | GameStore</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/adminlte.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body.login-page, body.register-page {
+      background: var(--admin-bg) !important;
+      background-image: radial-gradient(ellipse at 10% 10%, rgba(108,92,231,0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 90% 90%, rgba(0,206,201,0.06) 0%, transparent 50%) !important;
+    }
+    .login-box, .register-box { width: 400px; }
+    .login-logo a, .register-logo a {
+      color: #fff !important;
+      font-weight: 800;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, #6c5ce7, #00cec9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-card-body, .register-card-body {
+      background: rgba(255,255,255,0.05) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      border-radius: 16px !important;
+      backdrop-filter: blur(20px);
+      color: #e8e8f0;
+    }
+    .login-card-body .login-box-msg, .register-card-body .login-box-msg {
+      color: #8888a0;
+    }
+    .card { background: transparent !important; box-shadow: none !important; }
+    .input-group-text {
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      color: #8888a0 !important;
+    }
+    .icheck-primary label { color: #8888a0 !important; }
+    a { color: #6c5ce7 !important; }
+    a:hover { color: #00cec9 !important; }
+  </style>
+</head>
+<body class="hold-transition login-page">
+<div class="login-box">
+  <div class="login-logo"><a href="/"><b>GameStore</b> Admin</a></div>
+  <div class="card">
+    <div class="card-body login-card-body">
+      <p class="login-box-msg">Inicia sesión para acceder al panel</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="input-group mb-3">
+          <input type="text" name="username" class="form-control" placeholder="Usuario" required>
+          <div class="input-group-append"><div class="input-group-text"><span class="fas fa-user"></span></div></div>
+        </div>
+        <div class="input-group mb-3">
+          <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
+          <div class="input-group-append"><div class="input-group-text"><span class="fas fa-lock"></span></div></div>
+        </div>
+        {% if messages %}{% for message in messages %}<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} py-2">{{ message }}</div>{% endfor %}{% endif %}
+        {% if form.errors %}<div class="alert alert-danger py-2">Usuario o contraseña incorrectos.</div>{% endif %}
+        <div class="row">
+          <div class="col-8">
+            <div class="icheck-primary"><input type="checkbox" id="remember"><label for="remember">Recordarme</label></div>
+          </div>
+          <div class="col-4"><button type="submit" class="btn btn-primary btn-block">Ingresar</button></div>
+        </div>
+      </form>
+      <p class="mb-1 mt-3"><a href="{% url 'password_reset' %}">Olvidé mi contraseña</a></p>
+      <p class="mb-0 mt-1"><a href="{% url 'store:login' %}"><i class="fas fa-store"></i> Panel de cliente</a></p>
+      <p class="mb-0 mt-2"><a href="/"><i class="fas fa-arrow-left"></i> Volver a la tienda</a></p>
+    </div>
+  </div>
+</div>
+<script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'js/adminlte.min.js' %}"></script>
+</body>
+</html>

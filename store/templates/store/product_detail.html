@@ -1,0 +1,242 @@
+{% extends 'base_cliente.html' %}
+{% load static %}
+{% block title %}{{ product.name }} - GameStore{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent p-0">
+            <li class="breadcrumb-item"><a href="{% url 'store:catalog' %}" class="text-muted">Catálogo</a></li>
+            <li class="breadcrumb-item active text-dark">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="position-relative">
+                <img id="mainImage" src="{% if product.image %}{{ product.image.url }}{% else %}https://placehold.co/600x800/1a1a3a/fff?text=Sin+Imagen{% endif %}" class="img-fluid rounded-4 w-100" style="max-height:500px;object-fit:cover;" alt="{{ product.name }}">
+                <button class="wishlist-btn position-absolute top-0 end-0 m-3 {% if product.id in wishlist_ids %}active{% endif %}" onclick="event.stopPropagation(); toggleWishlist({{ product.id }}, this)" data-product-id="{{ product.id }}">
+                    <i class="bi {% if product.id in wishlist_ids %}bi-heart-fill{% else %}bi-heart{% endif %} fs-4"></i>
+                </button>
+            </div>
+
+            {% if product.images.all or product.video_url %}
+            <div class="d-flex gap-2 mt-3 overflow-auto pb-2">
+                <div class="gallery-thumb active" onclick="document.getElementById('mainImage').src='{% if product.image %}{{ product.image.url }}{% else %}https://placehold.co/600x800/1a1a3a/fff?text=Sin+Imagen{% endif %}'; document.querySelectorAll('.gallery-thumb').forEach(t=>t.classList.remove('active')); this.classList.add('active');">
+                    <img src="{% if product.image %}{{ product.image.url }}{% else %}https://placehold.co/600x800/1a1a3a/fff?text=Sin+Imagen{% endif %}" class="rounded-3" style="width:80px;height:60px;object-fit:cover;">
+                </div>
+                {% for img in product.images.all %}
+                <div class="gallery-thumb" onclick="document.getElementById('mainImage').src='{{ img.image.url }}'; document.querySelectorAll('.gallery-thumb').forEach(t=>t.classList.remove('active')); this.classList.add('active');">
+                    <img src="{{ img.image.url }}" class="rounded-3" style="width:80px;height:60px;object-fit:cover;">
+                </div>
+                {% endfor %}
+                {% if product.video_url %}
+                <div class="gallery-thumb" onclick="openTrailer('{{ product.video_url }}')">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:80px;height:60px;background:var(--gaming-glass);cursor:pointer;border:1px solid var(--gaming-card-border);">
+                        <i class="bi bi-play-circle-fill fs-3" style="color:var(--gaming-primary);"></i>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-6">
+            <div class="mb-3">
+                {% for platform in product.platforms.all %}
+                <span class="badge fs-6 me-1" style="background:{{ platform.color }};">{{ platform.name }}</span>
+                {% endfor %}
+                <span class="badge bg-secondary">{{ product.get_format_display }}</span>
+            </div>
+            <h1 class="fw-bold mb-2">{{ product.name }}</h1>
+            <div class="mb-3 d-flex align-items-center gap-2">
+                {% if user.is_authenticated %}
+                <div class="stars-input" data-product-id="{{ product.id }}">
+                    <input type="radio" name="rating" id="s5" value="5" {% if product.rating >= 5 %}checked{% endif %}>
+                    <label for="s5" title="5 estrellas"><i class="bi bi-star-fill"></i></label>
+                    <input type="radio" name="rating" id="s4" value="4" {% if product.rating >= 4 and product.rating < 5 %}checked{% endif %}>
+                    <label for="s4" title="4 estrellas"><i class="bi bi-star-fill"></i></label>
+                    <input type="radio" name="rating" id="s3" value="3" {% if product.rating >= 3 and product.rating < 4 %}checked{% endif %}>
+                    <label for="s3" title="3 estrellas"><i class="bi bi-star-fill"></i></label>
+                    <input type="radio" name="rating" id="s2" value="2" {% if product.rating >= 2 and product.rating < 3 %}checked{% endif %}>
+                    <label for="s2" title="2 estrellas"><i class="bi bi-star-fill"></i></label>
+                    <input type="radio" name="rating" id="s1" value="1" {% if product.rating >= 1 and product.rating < 2 %}checked{% endif %}>
+                    <label for="s1" title="1 estrella"><i class="bi bi-star-fill"></i></label>
+                </div>
+                {% else %}
+                {% for i in "12345" %}
+                <i class="bi bi-star{% if forloop.counter > product.rating %}-half{% endif %} text-warning"></i>
+                {% endfor %}
+                {% endif %}
+                <span class="text-muted ms-1">{{ product.rating }}</span>
+            </div>
+            <script>
+            document.querySelectorAll('.stars-input').forEach(group => {
+                group.querySelectorAll('label').forEach(label => {
+                    label.addEventListener('click', function(e) {
+                        const input = this.previousElementSibling;
+                        if (!input || input.tagName !== 'INPUT') return;
+                        const val = input.value;
+                        const pid = group.dataset.productId;
+                        fetch('/store/product/' + pid + '/rate/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                            body: JSON.stringify({rating: val})
+                        }).then(r => r.json()).then(data => {
+                            if (data.success) showToast('Valoración guardada: ' + data.rating + ' estrellas');
+                        });
+                    });
+                });
+            });
+            </script>
+
+            <div class="card bg-light border p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        {% if product.has_discount %}
+                        <span class="price-original fs-4">${{ product.price }}</span>
+                        <span class="discount-badge fs-5 ms-2">-{{ product.discount_percent }}%</span>
+                        {% endif %}
+                        <div class="price-final fs-1">${{ product.final_price|floatformat:2 }}</div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    {% if product.stock > 0 %}
+                    <p class="text-success mb-2"><i class="bi bi-check-circle"></i> En Stock {% if product.stock < 10 %}({{ product.stock }} restantes){% endif %}</p>
+                    {% else %}
+                    <p class="text-danger mb-2"><i class="bi bi-x-circle"></i> Agotado</p>
+                    {% endif %}
+                </div>
+                <div class="d-flex gap-3 mt-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-light btn-sm" onclick="document.getElementById('qty').value = Math.max(1, parseInt(document.getElementById('qty').value)-1)">-</button>
+                        <input type="number" id="qty" value="1" min="1" max="{{ product.stock }}" class="form-control form-control-sm bg-light text-dark border text-center" style="width:60px;">
+                        <button class="btn btn-outline-light btn-sm" onclick="document.getElementById('qty').value = Math.min({{ product.stock }}, parseInt(document.getElementById('qty').value)+1)">+</button>
+                    </div>
+                </div>
+                <div class="d-flex gap-3 mt-3">
+                    <button class="btn btn-accent flex-fill" onclick="addToCart({{ product.id }}, document.getElementById('qty').value)"><i class="bi bi-cart-plus"></i> Añadir al Carrito</button>
+                    <button class="btn btn-outline-accent flex-fill" onclick="addToCart({{ product.id }}, document.getElementById('qty').value); window.location.href='{% url 'store:checkout' %}'">Comprar Ya</button>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <p><strong>Desarrollador:</strong> {{ product.developer|default:'-' }}</p>
+                <p><strong>Editor:</strong> {{ product.publisher|default:'-' }}</p>
+                <p><strong>Lanzamiento:</strong> {{ product.release_date|date:'d/m/Y'|default:'-' }}</p>
+                <p><strong>Géneros:</strong> {% for g in product.genres.all %}<span class="badge bg-secondary me-1">{{ g.name }}</span>{% endfor %}</p>
+            </div>
+
+            {% if product.requirements.exists %}
+            <div class="mt-3">
+                <ul class="nav nav-tabs border" id="reqTabs">
+                    {% for req in product.requirements.all %}
+                    <li class="nav-item">
+                        <a class="nav-link text-dark {% if forloop.first %}active bg-light border{% endif %}" data-bs-toggle="tab" href="#req{{ req.id }}">{{ req.get_type_display }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <div class="tab-content p-3 bg-light border border-top-0 border rounded-bottom">
+                    {% for req in product.requirements.all %}
+                    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="req{{ req.id }}">
+                        <table class="table table-borderless table-sm">
+                            <tr><td class="text-muted">SO</td><td>{{ req.os }}</td></tr>
+                            <tr><td class="text-muted">CPU</td><td>{{ req.cpu }}</td></tr>
+                            <tr><td class="text-muted">RAM</td><td>{{ req.ram }}</td></tr>
+                            <tr><td class="text-muted">GPU</td><td>{{ req.gpu }}</td></tr>
+                            <tr><td class="text-muted">Almacenamiento</td><td>{{ req.storage }}</td></tr>
+                        </table>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <ul class="nav nav-tabs border" id="infoTabs">
+                <li class="nav-item"><a class="nav-link text-dark active bg-light border" data-bs-toggle="tab" href="#sinopsis">Sinopsis</a></li>
+            </ul>
+            <div class="tab-content p-4 bg-light border border-top-0 border rounded-bottom">
+                <div class="tab-pane fade show active" id="sinopsis">
+                    <p>{{ product.description }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if related %}
+    <div class="mt-5">
+        <h4 class="mb-4">Te pueden interesar</h4>
+        <div class="row g-4">
+            {% for r in related %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="game-card">
+                    <a href="{% url 'store:product_detail' r.id %}" class="text-decoration-none position-relative d-block">
+                        <button class="wishlist-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleWishlist({{ r.id }}, this)" data-product-id="{{ r.id }}">
+                            <i class="bi bi-heart"></i>
+                        </button>
+                        <img src="{% if r.image %}{{ r.image.url }}{% else %}https://placehold.co/300x220/1a1a3a/fff?text=Sin+Imagen{% endif %}" class="game-card-img" alt="{{ r.name }}">
+                    </a>
+                    <div class="game-card-body">
+                        <h6 class="game-card-title">{{ r.name|truncatechars:40 }}</h6>
+                        <div class="price-final">${{ r.final_price|floatformat:2 }}</div>
+                        <button class="btn-add-cart mt-2 w-100" onclick="addToCart({{ r.id }})"><i class="bi bi-cart-plus"></i> Agregar</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if product.video_url %}
+<div class="modal fade" id="trailerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="background:transparent;border:none;">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe id="trailerIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleWishlist(productId, btn) {
+    fetch('{% url "store:wishlist_toggle" %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({product_id: productId})
+    }).then(r => r.json()).then(data => {
+        const icon = btn.querySelector('i');
+        if (data.in_wishlist) {
+            icon.className = 'bi bi-heart-fill fs-4';
+            btn.classList.add('active');
+            showToast('Agregado a favoritos');
+        } else {
+            icon.className = 'bi bi-heart fs-4';
+            btn.classList.remove('active');
+            showToast('Eliminado de favoritos');
+        }
+    });
+}
+function openTrailer(url) {
+    const iframe = document.getElementById('trailerIframe');
+    iframe.src = url + '?autoplay=1';
+    new bootstrap.Modal(document.getElementById('trailerModal')).show();
+    document.getElementById('trailerModal').addEventListener('hidden.bs.modal', function() {
+        iframe.src = '';
+    }, {once: true});
+}
+</script>
+{% endblock %}

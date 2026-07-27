@@ -1,0 +1,433 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameStore - Tu Tienda de Videojuegos</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/store.css' %}">
+    <style>
+    @keyframes pageFadeIn {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    .page-entrance {
+        animation: pageFadeIn 0.6s ease-out forwards;
+    }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="/">GameStore</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'store:catalog' %}">Catálogo</a></li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'store:library' %}"><i class="bi bi-controller"></i> Biblioteca</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'store:order_history' %}"><i class="bi bi-truck"></i> Pedidos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'store:wishlist' %}"><i class="bi bi-heart"></i> Favoritos</a></li>
+                    {% endif %}
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+                        <i class="bi bi-moon-stars-fill"></i>
+                    </button>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'store:catalog' %}" class="btn btn-accent btn-sm"><i class="bi bi-cart3"></i> Tienda</a>
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">{{ user.username }}</a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">Mi Cuenta</a></li>
+                            <li><a class="dropdown-item" href="{% url 'store:library' %}">Biblioteca</a></li>
+                            <li><a class="dropdown-item" href="{% url 'store:order_history' %}">Pedidos</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar Sesión</a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'store:login' %}" class="btn btn-outline-accent btn-sm">Iniciar Sesión</a>
+                    <a href="{% url 'store:register' %}" class="btn btn-accent btn-sm">Registrarse</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-entrance">
+    <section class="coverflow-hero">
+        <div class="container">
+            {% if latest_games %}
+            <div class="coverflow-wrapper">
+                <div class="coverflow-track" id="coverflowTrack"></div>
+                <button class="coverflow-nav prev" aria-label="Anterior">‹</button>
+                <button class="coverflow-nav next" aria-label="Siguiente">›</button>
+            </div>
+            <div class="coverflow-dots" id="coverflowDots"></div>
+            {% endif %}
+        </div>
+    </section>
+
+    {% if platforms %}
+    <section class="py-5 reveal">
+        <div class="container">
+            <h2 class="section-title">Plataformas</h2>
+            <div class="row g-3">
+                {% for platform in platforms %}
+                <div class="col-6 col-md-3 col-lg">
+                    <a href="{% url 'store:catalog' %}?platform={{ platform.slug }}" class="text-decoration-none">
+                        <div class="platform-card">
+                            <i class="{{ platform.icon }}"></i>
+                            <div class="fw-medium text-dark">{{ platform.name }}</div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if on_sale %}
+    <section class="py-5 reveal">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title">Ofertas</h2>
+                <a href="{% url 'store:catalog' %}?sort=price_asc" class="text-decoration-none" style="color:var(--gaming-primary);">Ver todo <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="row g-4">
+                {% for product in on_sale %}
+                <div class="col-6 col-md-4 col-lg-4 tilt-card">
+                    <div class="game-card ripple">
+                        <a href="{% url 'store:product_detail' product.id %}" class="text-decoration-none position-relative d-block">
+                            <button class="wishlist-btn" onclick="event.preventDefault(); event.stopPropagation(); handleWishlist({{ product.id }}, this)" data-product-id="{{ product.id }}">
+                                <i class="bi bi-heart"></i>
+                            </button>
+                            <img src="{% if product.image %}{{ product.image.url }}{% else %}https://placehold.co/300x200/1a1a3a/fff?text=Sin+Imagen{% endif %}" class="game-card-img" alt="{{ product.name }}">
+                        </a>
+                        <div class="game-card-body">
+                            <div>{% for p in product.platforms.all %}<span class="badge bg-secondary me-1">{{ p.name }}</span>{% endfor %}</div>
+                            <h6 class="game-card-title">{{ product.name|truncatechars:40 }}</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="price-original">${{ product.price }}</span>
+                                    <span class="discount-badge">-{{ product.discount_percent }}%</span>
+                                    <div class="price-final">${{ product.final_price|floatformat:2 }}</div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn-add-cart" onclick="openQuickView({{ product.id }})" title="Vista rápida"><i class="bi bi-eye"></i></button>
+                                    <button class="btn-add-cart" onclick="handleCart({{ product.id }})"><i class="bi bi-cart-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if new_releases %}
+    <section class="py-5 reveal">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="section-title">Novedades</h2>
+                <a href="{% url 'store:catalog' %}?sort=newest" class="text-decoration-none" style="color:var(--gaming-primary);">Ver todo <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="row g-4">
+                {% for product in new_releases %}
+                <div class="col-6 col-md-4 col-lg-3 tilt-card">
+                    <div class="game-card ripple">
+                        <a href="{% url 'store:product_detail' product.id %}" class="text-decoration-none position-relative d-block">
+                            <button class="wishlist-btn" onclick="event.preventDefault(); event.stopPropagation(); handleWishlist({{ product.id }}, this)" data-product-id="{{ product.id }}">
+                                <i class="bi bi-heart"></i>
+                            </button>
+                            <img src="{% if product.image %}{{ product.image.url }}{% else %}https://placehold.co/300x200/1a1a3a/fff?text=Sin+Imagen{% endif %}" class="game-card-img" alt="{{ product.name }}">
+                        </a>
+                        <div class="game-card-body">
+                            <div class="mb-1">{% for p in product.platforms.all %}<span class="badge bg-secondary me-1">{{ p.name }}</span>{% endfor %}</div>
+                            <h6 class="game-card-title">{{ product.name|truncatechars:40 }}</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="price-final">${{ product.final_price|floatformat:2 }}</div>
+                                <div class="d-flex gap-1">
+                                    <button class="btn-add-cart" onclick="openQuickView({{ product.id }})" title="Vista rápida"><i class="bi bi-eye"></i></button>
+                                    <button class="btn-add-cart" onclick="handleCart({{ product.id }})"><i class="bi bi-cart-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="py-5 text-center reveal">
+        <div class="container">
+            <h2 class="section-title">¿Listo para jugar?</h2>
+            <p class="text-muted mb-4">Únete a GameStore y accede a los mejores títulos.</p>
+            {% if user.is_authenticated %}
+            <a href="{% url 'store:catalog' %}" class="btn btn-accent"><i class="bi bi-controller"></i> Ir a la Tienda</a>
+            {% else %}
+            <a href="{% url 'store:register' %}" class="btn btn-accent me-2"><i class="bi bi-person-plus"></i> Crear Cuenta</a>
+            <a href="{% url 'store:login' %}" class="btn btn-outline-accent">Ya tengo cuenta</a>
+            {% endif %}
+        </div>
+    </section>
+
+    </div>
+    <footer class="footer-custom">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6"><h5 class="text-light">GameStore</h5><p>Tu tienda de videojuegos.</p></div>
+                <div class="col-md-3"><h6 class="text-light">Soporte</h6><ul class="list-unstyled"><li>FAQ</li><li>Contacto</li></ul></div>
+                <div class="col-md-3"><h6 class="text-light">Redes</h6><div class="d-flex gap-3 fs-5"><i class="bi bi-twitter-x"></i><i class="bi bi-discord"></i><i class="bi bi-instagram"></i></div></div>
+            </div>
+            <hr style="border-color:rgba(255,255,255,.1);">
+            <p class="text-center small mb-0">&copy; 2026 GameStore.</p>
+        </div>
+    </footer>
+
+    <div class="toast-container">
+        <div id="cartToast" class="toast align-items-center text-bg-success border-0" role="alert">
+            <div class="d-flex"><div class="toast-body" id="toastMessage"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    function showToast(msg) {
+        document.getElementById('toastMessage').textContent = msg;
+        new bootstrap.Toast(document.getElementById('cartToast')).show();
+    }
+    function handleCart(productId) {
+        {% if user.is_authenticated %}
+        fetch('/store/cart/add/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({product_id: productId, quantity: 1})
+        }).then(r => r.json()).then(data => { if (data.success) showToast('Producto agregado al carrito'); });
+        {% else %}
+        showToast('Debes registrarte para comprar');
+        setTimeout(() => { window.location.href = '{% url "store:register" %}'; }, 1500);
+        {% endif %}
+    }
+    function handleWishlist(productId, btn) {
+        {% if user.is_authenticated %}
+        var icon = btn.querySelector('i');
+        var wasFilled = icon.classList.contains('bi-heart-fill');
+        icon.className = wasFilled ? 'bi bi-heart' : 'bi bi-heart-fill';
+        btn.classList.toggle('active');
+        fetch('{% url "store:wishlist_toggle" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({product_id: productId})
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.in_wishlist === wasFilled) {
+                icon.className = wasFilled ? 'bi bi-heart-fill' : 'bi bi-heart';
+                btn.classList.toggle('active');
+            }
+        }).catch(function() {
+            icon.className = wasFilled ? 'bi bi-heart-fill' : 'bi bi-heart';
+            btn.classList.toggle('active');
+        });
+        {% else %}
+        showToast('Debes iniciar sesión para guardar favoritos');
+        setTimeout(function() { window.location.href = '{% url "store:login" %}'; }, 1500);
+        {% endif %}
+    }
+    function openQuickView(productId) {
+        window.location.href = '/store/game/' + productId + '/';
+    }
+    function initScrollReveal() {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+    }
+    document.addEventListener('DOMContentLoaded', initScrollReveal);
+    function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        document.querySelector('.theme-toggle i').className = next === 'dark' ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+        {% if user.is_authenticated %}
+        fetch('{% url "set_theme" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: 'theme=' + next
+        });
+        {% endif %}
+    }
+    (function() {
+        {% if user.is_authenticated %}
+        const saved = '{{ user.theme }}' || 'dark';
+        {% else %}
+        const saved = localStorage.getItem('theme') || 'dark';
+        {% endif %}
+        document.documentElement.setAttribute('data-theme', saved);
+    })();
+
+    // --- Coverflow ---
+    var coverflowGames = [
+        {% for g in latest_games %}
+        {
+            id: {{ g.id }},
+            title: '{{ g.name|escapejs|upper }}',
+            description: '{{ g.description|escapejs|truncatechars:120 }}',
+            image: '{% if g.image %}{{ g.image.url }}{% endif %}',
+            url: '{% url "store:product_detail" g.id %}',
+            platform: '{% for p in g.platforms.all %}{{ p.name }}{% if not forloop.last %}, {% endif %}{% endfor %}'
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    var wishlistIds = {{ wishlist_ids|default:'[]' }};
+    (function() {
+        if (!document.getElementById('coverflowTrack')) return;
+        var track = document.getElementById('coverflowTrack');
+        var dots = document.getElementById('coverflowDots');
+        var current = 0;
+        var startX = 0, isDragging = false, dragDelta = 0;
+
+        function buildCards() {
+            track.innerHTML = '';
+            dots.innerHTML = '';
+            coverflowGames.forEach(function(game, i) {
+                var favIcon = wishlistIds.indexOf(game.id) !== -1 ? 'bi bi-heart-fill' : 'bi bi-heart';
+                var favActive = wishlistIds.indexOf(game.id) !== -1 ? ' active' : '';
+                var card = document.createElement('div');
+                card.className = 'coverflow-card';
+                card.dataset.index = i;
+                card.innerHTML =
+                    '<div class="coverflow-card-inner">' +
+                        '<div class="coverflow-bg-wrap">' +
+                            (game.image ? '<img src="' + game.image + '" alt="" class="coverflow-bg" loading="lazy">' : '<div class="coverflow-bg coverflow-bg-placeholder"></div>') +
+                        '</div>' +
+                        '<button class="coverflow-fav' + favActive + '" data-id="' + game.id + '"><i class="bi ' + favIcon + '"></i></button>' +
+                        '<div class="coverflow-content">' +
+                            '<div class="coverflow-platform">' + game.platform + '</div>' +
+                            '<h3 class="coverflow-title">' + game.title + '</h3>' +
+                            '<p class="coverflow-desc">' + game.description + '</p>' +
+                            '<div class="coverflow-actions">' +
+                                '<a href="' + game.url + '" class="coverflow-btn-primary">VER MÁS</a>' +
+                                (game.video_url ? '<button class="coverflow-btn-play"><i class="bi bi-play-fill"></i></button>' : '') +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                card.querySelector('.coverflow-fav').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    handleWishlist(game.id, this);
+                });
+                track.appendChild(card);
+
+                var dot = document.createElement('button');
+                dot.className = 'coverflow-dot';
+                dot.dataset.index = i;
+                dot.addEventListener('click', function(e) { e.stopPropagation(); goTo(i); });
+                dots.appendChild(dot);
+            });
+        }
+
+        function goTo(index) {
+            var n = coverflowGames.length;
+            current = ((index % n) + n) % n;
+            update();
+        }
+        function update() {
+            var cards = track.querySelectorAll('.coverflow-card');
+            var total = cards.length;
+            var half = Math.floor(total / 2);
+            cards.forEach(function(card, i) {
+                var raw = i - current;
+                var offset = ((raw % total) + total) % total;
+                if (offset > half) offset = offset - total;
+                card.classList.remove('active', 'left', 'left-2', 'right', 'right-2', 'hidden');
+                if (offset === 0) {
+                    card.classList.add('active');
+                } else if (offset === -1) {
+                    card.classList.add('left');
+                } else if (offset === 1) {
+                    card.classList.add('right');
+                } else if (offset === -2) {
+                    card.classList.add('left-2');
+                } else if (offset === 2) {
+                    card.classList.add('right-2');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            var dotEls = dots.querySelectorAll('.coverflow-dot');
+            dotEls.forEach(function(d, i) {
+                d.classList.toggle('active', i === current);
+            });
+        }
+
+        // Pointer drag — use document listeners to avoid blocking click events
+        track.addEventListener('pointerdown', function(e) {
+            if (e.target.closest('.coverflow-fav, .coverflow-btn-primary, .coverflow-btn-play')) return;
+            isDragging = true;
+            startX = e.clientX;
+            dragDelta = 0;
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+        });
+        function onPointerMove(e) { if (isDragging) dragDelta = e.clientX - startX; }
+        function onPointerUp() {
+            if (!isDragging) return;
+            isDragging = false;
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+            if (Math.abs(dragDelta) > 50) {
+                goTo(dragDelta > 0 ? current - 1 : current + 1);
+            }
+        }
+
+        // Click on any card → go to it (event delegation avoids pointer capture issues)
+        track.addEventListener('click', function(e) {
+            var card = e.target.closest('.coverflow-card');
+            if (card) {
+                var idx = parseInt(card.dataset.index, 10);
+                if (!isNaN(idx)) goTo(idx);
+            }
+        });
+
+        // Nav buttons
+        var wrapper = track.closest('.coverflow-wrapper');
+        wrapper.querySelector('.prev').addEventListener('click', function() { goTo(current - 1); });
+        wrapper.querySelector('.next').addEventListener('click', function() { goTo(current + 1); });
+
+        // Keyboard
+        document.addEventListener('keydown', function(e) {
+            var section = track.closest('.coverflow-hero');
+            if (!section) return;
+            var rect = section.getBoundingClientRect();
+            if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+            if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+            if (e.key === 'ArrowRight') { e.preventDefault(); goTo(current + 1); }
+        });
+
+        buildCards();
+        update();
+        window.addEventListener('resize', update);
+    })();
+
+    </script>
+</body>
+</html>

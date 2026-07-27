@@ -1,0 +1,124 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - Registro | GameStore</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/adminlte.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body.login-page, body.register-page {
+      background: var(--admin-bg) !important;
+      background-image: radial-gradient(ellipse at 10% 10%, rgba(108,92,231,0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 90% 90%, rgba(0,206,201,0.06) 0%, transparent 50%) !important;
+    }
+    .login-box, .register-box { width: 420px; }
+    .login-logo a, .register-logo a {
+      color: #fff !important;
+      font-weight: 800;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, #6c5ce7, #00cec9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-card-body, .register-card-body {
+      background: rgba(255,255,255,0.05) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      border-radius: 16px !important;
+      backdrop-filter: blur(20px);
+      color: #e8e8f0;
+    }
+    .login-card-body .login-box-msg, .register-card-body .login-box-msg {
+      color: #8888a0;
+    }
+    .card { background: transparent !important; box-shadow: none !important; }
+    .input-group-text {
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      color: #8888a0 !important;
+    }
+    a { color: #6c5ce7 !important; }
+    a:hover { color: #00cec9 !important; }
+    input[type="file"]::-webkit-file-upload-button {
+      background: linear-gradient(135deg, #6c5ce7, #00cec9);
+      border: none;
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    input[type="file"]::-webkit-file-upload-button:hover {
+      opacity: 0.9;
+    }
+    input[type="file"]::file-selector-button {
+      background: linear-gradient(135deg, #6c5ce7, #00cec9);
+      border: none;
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    input[type="file"]::file-selector-button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body class="hold-transition register-page">
+<div class="register-box">
+  <div class="register-logo"><a href="/"><b>GameStore</b> Admin</a></div>
+  <div class="card">
+    <div class="card-body register-card-body">
+      <p class="login-box-msg">Crear una cuenta nueva</p>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in form %}
+        {% if 'profile' in field.name %}
+        <div class="mb-3">
+          <label class="text-muted small fw-semibold mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+        {% else %}
+        <div class="input-group mb-3">
+          {{ field }}
+          <div class="input-group-append">
+            <div class="input-group-text">
+              {% if 'username' in field.name %}<span class="fas fa-user"></span>
+              {% elif 'email' in field.name %}<span class="fas fa-envelope"></span>
+              {% elif 'password' in field.name %}<span class="fas fa-lock"></span>
+              {% else %}<span class="fas fa-info"></span>{% endif %}
+            </div>
+          </div>
+          {% for error in field.errors %}<div class="text-danger small w-100">{{ error }}</div>{% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        <div class="row">
+          <div class="col-8">
+            <div class="icheck-primary"><input type="checkbox" id="agreeTerms"><label for="agreeTerms">Acepto los <a href="#">términos</a></label></div>
+          </div>
+          <div class="col-4"><button type="submit" class="btn btn-primary btn-block">Registrar</button></div>
+        </div>
+      </form>
+      <a href="{% url 'login' %}" class="text-center">Ya tengo una cuenta</a>
+      <p class="mb-0 mt-1"><a href="{% url 'store:register' %}"><i class="fas fa-store"></i> Panel de cliente</a></p>
+      <p class="mb-0 mt-2"><a href="/"><i class="fas fa-arrow-left"></i> Volver a la tienda</a></p>
+    </div>
+  </div>
+</div>
+<script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'js/adminlte.min.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{% extends 'base_cliente.html' %}
+{% block title %}Mis Pedidos - GameStore{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Mis Pedidos</h2>
+    {% if orders %}
+    <div class="table-responsive">
+        <table class="table table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>#ORD-{{ order.id }}</td>
+                    <td>{{ order.created_at|date:'d/m/Y H:i' }}</td>
+                    <td>${{ order.total|floatformat:2 }}</td>
+                    <td><span class="badge bg-{% if order.status == 'PENDING' %}warning{% elif order.status == 'SHIPPED' %}info{% elif order.status == 'DELIVERED' %}success{% else %}danger{% endif %}">{{ order.get_status_display }}</span></td>
+                    <td><a href="{% url 'store:order_detail' order.id %}" class="btn btn-sm btn-outline-light">Ver</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg viewBox="0 0 120 120" fill="none">
+            <rect x="25" y="25" width="70" height="55" rx="6" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+            <path d="M30 30 L60 45 L90 30" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+            <path d="M40 80 L60 95 L80 80" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+            <line x1="60" y1="45" x2="60" y2="80" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+            <circle cx="60" cy="100" r="5" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+            <path d="M30 50 L45 60" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+            <path d="M90 50 L75 60" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
+        </svg>
+        <h4>Sin pedidos</h4>
+        <p>No tienes pedidos aún. ¡Empieza a comprar!</p>
+        <a href="{% url 'store:catalog' %}" class="btn btn-accent">Ir al catálogo</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends 'starter.html' %}
+{% load static %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block breadcrumb %}{{ title }}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <div class="card card-primary">
+      <div class="card-header"><h3 class="card-title">{{ title }}</h3></div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card-body">
+          {% for field in form %}
+          {% if field.widget_type == 'CheckboxInput' %}
+          <div class="form-check mb-3">
+            {{ field }}
+            <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% for error in field.errors %}
+            <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="form-group">
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<small class="text-muted">{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}
+            <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div class="card-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <a href="{% url 'dashboard:product_list' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% if product %}
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Galería de imágenes</h3></div>
+      <div class="card-body">
+        <div id="imageGallery" class="row g-2 mb-3">
+          {% for img in product.images.all %}
+          <div class="col-6" id="img-{{ img.id }}">
+            <div class="position-relative" style="border:2px solid {% if img.is_primary %}var(--admin-primary){% else %}var(--admin-border){% endif %};border-radius:8px;overflow:hidden;">
+              <img src="{{ img.image.url }}" class="w-100" style="height:120px;object-fit:cover;display:block;">
+              <div class="d-flex gap-1 p-1" style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);">
+                {% if not img.is_primary %}
+                <button class="btn btn-xs btn-primary set-primary" data-id="{{ img.id }}" title="Portada principal"><i class="fas fa-star"></i></button>
+                {% endif %}
+                <button class="btn btn-xs btn-danger delete-img" data-id="{{ img.id }}" title="Eliminar"><i class="fas fa-trash"></i></button>
+              </div>
+              {% if img.is_primary %}<small class="text-warning px-1" style="position:absolute;top:0;left:0;background:rgba(0,0,0,0.6);border-radius:0 0 4px 0;font-size:10px;">PRINCIPAL</small>{% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12"><p class="text-muted mb-0">Sin imágenes adicionales</p></div>
+          {% endfor %}
+        </div>
+        <hr>
+        <h6>Agregar imágenes</h6>
+        <form id="uploadForm" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="file" name="images" class="form-control mb-2" accept="image/*" multiple>
+          <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-upload"></i> Subir</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+$(function() {
+    var productId = {{ product.id|default:'null' }};
+    if (!productId) return;
+
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();
+        var fd = new FormData(this);
+        fd.append('product_id', productId);
+        $.ajax({
+            url: '{% url "dashboard:product_add_image" %}',
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            success: function() { location.reload(); },
+            error: function() { alert('Error al subir imagen'); }
+        });
+    });
+
+    $('.delete-img').on('click', function() {
+        if (!confirm('¿Eliminar esta imagen?')) return;
+        var id = $(this).data('id');
+        $.post('{% url "dashboard:product_delete_image" %}', {
+            csrfmiddlewaretoken: getCSRFToken(),
+            image_id: id
+        }, function() { $('#img-' + id).fadeOut(function() { $(this).remove(); }); });
+    });
+
+    $('.set-primary').on('click', function() {
+        var id = $(this).data('id');
+        $.post('{% url "dashboard:product_set_primary" %}', {
+            csrfmiddlewaretoken: getCSRFToken(),
+            image_id: id,
+            product_id: productId
+        }, function() { location.reload(); });
+    });
+});
+</script>
+{% endblock %}

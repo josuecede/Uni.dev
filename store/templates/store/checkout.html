@@ -1,0 +1,88 @@
+{% extends 'base_cliente.html' %}
+{% block title %}Checkout - GameStore{% endblock %}
+{% block content %}
+<div class="container py-4 checkout-page">
+    {% if cart and cart.count > 0 %}
+
+    <div class="checkout-steps">
+        <div class="checkout-step completed">
+            <div class="step-number"><i class="bi bi-check"></i></div>
+            <div class="step-label">Carrito</div>
+        </div>
+        <div class="checkout-step active">
+            <div class="step-number">2</div>
+            <div class="step-label">Checkout</div>
+        </div>
+        <div class="checkout-step">
+            <div class="step-number">3</div>
+            <div class="step-label">Confirmación</div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card bg-light border">
+                <div class="card-body">
+                    <h5>Resumen del pedido</h5>
+                    {% for item in cart.items.all %}
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom border">
+                        <div>
+                            <strong>{{ item.product.name }}</strong>
+                            <div class="text-muted small">x{{ item.quantity }}</div>
+                        </div>
+                        <div>${{ item.subtotal|floatformat:2 }}</div>
+                    </div>
+                    {% endfor %}
+                    <div class="d-flex justify-content-between mt-3 fs-5">
+                        <strong>Total</strong>
+                        <strong class="text-dark">${{ cart.total|floatformat:2 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <form method="post">
+                {% csrf_token %}
+                <div class="card bg-light border">
+                    <div class="card-body">
+                        <h5>Información de entrega</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección de envío (opcional para digital)</label>
+                            <textarea name="shipping_address" class="form-control bg-light text-dark border" rows="2" placeholder="Dirección física (si aplica)"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cupón de descuento</label>
+                            <input type="text" name="coupon_code" class="form-control bg-light text-dark border" placeholder="Ingresa tu cupón">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tarjeta de crédito/débito (simulado)</label>
+                            <div class="card bg-light p-3 border">
+                                <input type="text" class="form-control bg-light text-dark border mb-2" placeholder="Número de tarjeta" value="4242 4242 4242 4242">
+                                <div class="row g-2">
+                                    <div class="col-6"><input type="text" class="form-control bg-light text-dark border" placeholder="MM/AA" value="12/28"></div>
+                                    <div class="col-6"><input type="text" class="form-control bg-light text-dark border" placeholder="CVC" value="123"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-accent w-100 btn-lg">Confirmar Pedido — ${{ cart.total|floatformat:2 }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg viewBox="0 0 120 120" fill="none">
+            <rect x="20" y="35" width="80" height="60" rx="8" stroke="currentColor" stroke-width="2" fill="none" opacity="0.3"/>
+            <path d="M35 50 L60 70 L85 50" stroke="currentColor" stroke-width="2" opacity="0.4"/>
+            <circle cx="45" cy="70" r="5" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+            <circle cx="75" cy="70" r="5" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+            <path d="M40 20 L60 35 L80 20" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+        </svg>
+        <h4>Tu carrito está vacío</h4>
+        <p>Agrega juegos desde el catálogo para continuar.</p>
+        <a href="{% url 'store:catalog' %}" class="btn btn-accent">Ir al catálogo</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
