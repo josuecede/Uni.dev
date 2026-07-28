@@ -27,6 +27,8 @@ COVER_URLS = {
     'Hollow Knight': 'https://upload.wikimedia.org/wikipedia/en/d/de/Hollow_Knight_2026_cover_art.jpg',
     'Celeste': 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Celeste_box_art_full.png',
     'Grand Theft Auto V': 'https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png',
+    'Fortnite': 'https://static.wikia.nocookie.net/fortnite/images/a/a6/Fortnite_%28Update_v41.20%29_-_Cover_Art_-_Fortnite.jpg/revision/latest?cb=20260716084407',
+    'Genshin Impact': 'https://images.launchbox-app.com/1e6e82fb-e45f-4d85-9875-3fc893fa3495.jpg',
 }
 
 PLATFORMS = [
