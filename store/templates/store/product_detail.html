@@ -232,9 +232,11 @@ function toggleWishlist(productId, btn) {
 }
 function openTrailer(url) {
     const iframe = document.getElementById('trailerIframe');
-    url = url.replace('watch?v=', 'embed/').split('&')[0];
-    iframe.src = url + '?autoplay=1';
-    new bootstrap.Modal(document.getElementById('trailerModal')).show();
+    iframe.src = '';
+    const videoId = url.split('/').pop().split('?')[0].split('&')[0];
+    iframe.src = 'https://www.youtube-nocookie.com/embed/' + videoId + '?autoplay=1&mute=1&rel=0';
+    const modal = new bootstrap.Modal(document.getElementById('trailerModal'));
+    modal.show();
     document.getElementById('trailerModal').addEventListener('hidden.bs.modal', function() {
         iframe.src = '';
     }, {once: true});
