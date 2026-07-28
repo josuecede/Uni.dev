@@ -6,7 +6,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.http import JsonResponse
 from django.utils import timezone
 from .decorators import staff_required, admin_required
-from .models import Product, ProductImage, Category, Order, OrderItem
+from .models import Product, ProductImage, Platform, Genre, Category, Order, OrderItem
 from store.models import Coupon
 from .forms import ProductForm, PlatformForm, CategoryForm, OrderStatusForm, AdminUserCreateForm, AdminUserEditForm, AdminPasswordForm
 from users.models import CustomUser
@@ -313,6 +313,19 @@ def product_delete_image(request):
         img = get_object_or_404(ProductImage, id=request.POST.get('image_id'))
         img.delete()
         return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+
+@staff_required
+def product_replace_image(request):
+    if request.method == 'POST':
+        img = get_object_or_404(ProductImage, id=request.POST.get('image_id'))
+        new_file = request.FILES.get('image')
+        if new_file:
+            img.image.delete(save=False)
+            img.image = new_file
+            img.save()
+            return JsonResponse({'success': True, 'url': img.image.url})
     return JsonResponse({'success': False}, status=400)
 
 

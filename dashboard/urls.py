@@ -19,6 +19,7 @@ urlpatterns = [
     path('productos/agregar-imagen/', views.product_add_image, name='product_add_image'),
     path('productos/eliminar-imagen/', views.product_delete_image, name='product_delete_image'),
     path('productos/imagen-principal/', views.product_set_primary, name='product_set_primary'),
+    path('productos/reemplazar-imagen/', views.product_replace_image, name='product_replace_image'),
     path('pedidos/', views.order_list, name='order_list'),
     path('pedidos/<int:pk>/', views.order_detail, name='order_detail'),
     path('usuarios/', views.user_list, name='user_list'),
