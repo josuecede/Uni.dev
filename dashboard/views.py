@@ -300,8 +300,12 @@ def coupon_edit(request, pk):
 def product_add_image(request):
     if request.method == 'POST':
         product = get_object_or_404(Product, id=request.POST.get('product_id'))
-        for f in request.FILES.getlist('images'):
-            ProductImage.objects.create(product=product, image=f)
+        files = request.FILES.getlist('images')
+        for i, f in enumerate(files):
+            pi = ProductImage.objects.create(product=product, image=f)
+            if i == 0 and not product.image:
+                product.image.save(f'cover_{pi.id}.png', f.file, save=False)
+                product.save()
         messages.success(request, 'Imágenes agregadas.')
         return redirect(request.META.get('HTTP_REFERER', 'dashboard:product_list'))
     return redirect('dashboard:product_list')
