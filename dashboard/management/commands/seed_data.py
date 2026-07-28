@@ -123,7 +123,7 @@ def download_image(url, timeout=5):
         return None
 
 
-def generate_placeholder(color, size=(400, 400)):
+def generate_placeholder(color, size=(1920, 1080)):
     img = Image.new('RGB', size, color=color)
     draw = ImageDraw.Draw(img)
     r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
@@ -143,10 +143,15 @@ def get_image_data(game_name, color):
             try:
                 img = Image.open(io.BytesIO(data))
                 w, h = img.size
-                size = min(w, h)
-                left = (w - size) // 2
-                top = (h - size) // 2
-                img = img.crop((left, top, left + size, top + size))
+                target_ratio = 16 / 9
+                if w / h > target_ratio:
+                    new_w = int(h * target_ratio)
+                    left = (w - new_w) // 2
+                    img = img.crop((left, 0, left + new_w, h))
+                else:
+                    new_h = int(w / target_ratio)
+                    top = (h - new_h) // 2
+                    img = img.crop((0, top, w, top + new_h))
                 buf = io.BytesIO()
                 img.save(buf, format='PNG')
                 return buf.getvalue()
@@ -158,7 +163,7 @@ def get_image_data(game_name, color):
 def get_gallery_images(color):
     imgs = []
     for _ in range(4):
-        imgs.append(generate_placeholder(color, (200, 200)))
+        imgs.append(generate_placeholder(color, (1920, 1080)))
     return imgs
 
 
