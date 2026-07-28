@@ -153,9 +153,8 @@ def get_image_data(game_name, color):
                     new_h = int(w / target_ratio)
                     top = (h - new_h) // 2
                     img = img.crop((0, top, w, top + new_h))
-                img = img.resize((960, 540), Image.LANCZOS)
                 buf = io.BytesIO()
-                img.save(buf, format='JPEG', quality=85)
+                img.save(buf, format='PNG')
                 return buf.getvalue()
             except Exception:
                 return data
