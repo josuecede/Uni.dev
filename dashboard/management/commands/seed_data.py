@@ -1,6 +1,7 @@
 import io
 import os
 import random
+import urllib.request
 from datetime import date, timedelta
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
@@ -9,6 +10,24 @@ from PIL import Image, ImageDraw
 
 from dashboard.models import Platform, Genre, Category, Product, ProductImage
 from users.models import CustomUser
+
+COVER_URLS = {
+    'Cyberpunk 2077': 'https://upload.wikimedia.org/wikipedia/en/9/9f/Cyberpunk_2077_box_art.jpg',
+    'Elden Ring': 'https://upload.wikimedia.org/wikipedia/en/b/b9/Elden_Ring_Box_art.jpg',
+    'God of War Ragnarök': 'https://upload.wikimedia.org/wikipedia/en/e/ee/God_of_War_Ragnar%C3%B6k_cover.jpg',
+    'The Legend of Zelda: Tears of the Kingdom': 'https://upload.wikimedia.org/wikipedia/en/f/fb/The_Legend_of_Zelda_Tears_of_the_Kingdom_cover.jpg',
+    'Red Dead Redemption 2': 'https://upload.wikimedia.org/wikipedia/en/4/44/Red_Dead_Redemption_II.jpg',
+    'Baldur\'s Gate 3': 'https://upload.wikimedia.org/wikipedia/en/1/12/Baldur%27s_Gate_3_cover_art.jpg',
+    'Forza Motorsport': 'https://upload.wikimedia.org/wikipedia/en/7/7e/Forza_Motorsport_%282023%29_cover_art.png',
+    'Horizon Forbidden West': 'https://upload.wikimedia.org/wikipedia/en/6/69/Horizon_Forbidden_West_cover_art.jpg',
+    'Starfield': 'https://upload.wikimedia.org/wikipedia/en/6/6d/Bethesda_Starfield.jpg',
+    'Mortal Kombat 1': 'https://upload.wikimedia.org/wikipedia/en/5/5b/Mortal_Kombat_1_key_art.jpeg',
+    'Gran Turismo 7': 'https://upload.wikimedia.org/wikipedia/en/1/14/Gran_Turismo_7_cover_art.jpg',
+    'Stray': 'https://upload.wikimedia.org/wikipedia/en/f/f1/Stray_cover_art.jpg',
+    'Hollow Knight': 'https://upload.wikimedia.org/wikipedia/en/d/de/Hollow_Knight_2026_cover_art.jpg',
+    'Celeste': 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Celeste_box_art_full.png',
+    'Grand Theft Auto V': 'https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png',
+}
 
 PLATFORMS = [
     {'name': 'PC', 'slug': 'pc', 'icon': 'bi-pc-display', 'color': '#1a1a2e'},
@@ -75,21 +94,50 @@ COLORS = [
     '#34495e', '#16a085', '#27ae60', '#2980b9', '#8e44ad',
 ]
 
+PLACEHOLDER_COLORS = [
+    '#1a1a2e', '#16213e', '#0f3460', '#e94560', '#533483',
+    '#e07c24', '#2d4059', '#ea5455', '#f07b3f', '#1b1717',
+    '#810000', '#630000', '#222831', '#30475e', '#f05454',
+    '#2c3e50', '#8e44ad', '#16a085', '#c0392b', '#d35400',
+    '#2980b9', '#27ae60', '#f39c12', '#7f8c8d', '#2c3e50',
+]
 
-def generate_placeholder_image(color, size=(400, 225)):
+
+def download_image(url, timeout=5):
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read()
+    except Exception:
+        return None
+
+
+def generate_placeholder(color, size=(400, 225)):
     img = Image.new('RGB', size, color=color)
     draw = ImageDraw.Draw(img)
     r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
     accent = (min(255, r + 40), min(255, g + 40), min(255, b + 40))
-    draw.ellipse([size[0]//4, size[1]//4, size[0]*3//4, size[1]*3//4], fill=accent, outline=None)
+    draw.ellipse([size[0]//4, size[1]//4, size[0]*3//4, size[1]*3//4], fill=accent)
     draw.rectangle([size[0]//3, size[1]//3, size[0]*2//3, size[1]*2//3], fill=None, outline='white', width=3)
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
 
 
-def generate_small_image(color):
-    return generate_placeholder_image(color, (200, 112))
+def get_image_data(game_name, color):
+    url = COVER_URLS.get(game_name)
+    if url:
+        data = download_image(url)
+        if data:
+            return data
+    return generate_placeholder(color)
+
+
+def get_gallery_images(color):
+    imgs = []
+    for _ in range(4):
+        imgs.append(generate_placeholder(color, (200, 112)))
+    return imgs
 
 
 class Command(BaseCommand):
@@ -134,21 +182,20 @@ class Command(BaseCommand):
                     'format': 'DIGITAL',
                 }
             )
-            if created:
-                img_data = generate_placeholder_image(color)
-                product.image.save(f'product_{product.id}.png', ContentFile(img_data))
-                product.save()
-                self.stdout.write(f'  + {game_data["name"]} (${game_data["price"]})')
-            else:
-                self.stdout.write(f'  = {game_data["name"]} (ya existe)')
+
+            img_data = get_image_data(game_data['name'], color)
+            product.image.save(f'product_{product.id}.png', ContentFile(img_data))
+            product.save()
+            label = '+' if created else '~'
+            self.stdout.write(f'  {label} {game_data["name"]} (${game_data["price"]})')
 
             product.platforms.set([Platform.objects.get(slug=s) for s in game_data['platforms']])
             product.genres.set([Genre.objects.get(slug=s) for s in game_data['genres']])
 
-            if created:
-                for gi in range(random.randint(3, 6)):
-                    suffix = chr(97 + gi)
-                    img_data = generate_small_image(color)
+            existing_gallery_count = product.images.count()
+            if existing_gallery_count < 4:
+                for gi in range(existing_gallery_count, 4):
+                    img_data = generate_placeholder(PLACEHOLDER_COLORS[(i + gi) % len(PLACEHOLDER_COLORS)], (200, 112))
                     pi = ProductImage(product=product, is_primary=gi == 0)
                     pi.image.save(f'product_{product.id}_gallery_{gi}.png', ContentFile(img_data))
                     pi.save()
