@@ -29,6 +29,14 @@ COVER_URLS = {
     'Grand Theft Auto V': 'https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png',
     'Fortnite': 'https://static.wikia.nocookie.net/fortnite/images/a/a6/Fortnite_%28Update_v41.20%29_-_Cover_Art_-_Fortnite.jpg/revision/latest?cb=20260716084407',
     'Genshin Impact': 'https://images.launchbox-app.com/1e6e82fb-e45f-4d85-9875-3fc893fa3495.jpg',
+    'Spider-Man 2': 'https://upload.wikimedia.org/wikipedia/en/0/0f/SpiderMan2PS5BoxArt.jpeg',
+    'Call of Duty: Modern Warfare III': 'https://upload.wikimedia.org/wikipedia/en/f/f6/MWIII_Cover_Art.png',
+    'FIFA 24': 'https://upload.wikimedia.org/wikipedia/en/b/b3/EA_FC24_Cover.jpg',
+    'Resident Evil 4 Remake': 'https://upload.wikimedia.org/wikipedia/en/d/df/Resident_Evil_4_remake_cover_art.jpg',
+    'Assassin\'s Creed Mirage': 'https://upload.wikimedia.org/wikipedia/en/2/23/Assassin%27s_Creed_Mirage_cover.jpeg',
+    'Hogwarts Legacy': 'https://upload.wikimedia.org/wikipedia/en/f/fb/Hogwarts_legacyboxart.png',
+    'Stardew Valley': 'https://cdn.cloudflare.steamstatic.com/steam/apps/413150/library_600x900.jpg',
+    'Counter-Strike 2': 'https://upload.wikimedia.org/wikipedia/en/f/f2/CS2_Cover_Art.jpg',
 }
 
 PLATFORMS = [
