@@ -114,7 +114,8 @@ def set_theme(request):
 
 @login_required
 def profile_view(request):
-    return render(request, 'users/profile.html', {'user': request.user})
+    base_tpl = 'starter.html' if request.user.is_staff else 'base_cliente.html'
+    return render(request, 'users/profile.html', {'user': request.user, 'profile_base': base_tpl})
 
 
 @login_required
@@ -127,4 +128,5 @@ def profile_edit_view(request):
             return redirect('profile')
     else:
         form = UserProfileForm(instance=request.user)
-    return render(request, 'users/profile_edit.html', {'form': form})
+    base_tpl = 'starter.html' if request.user.is_staff else 'base_cliente.html'
+    return render(request, 'users/profile_edit.html', {'form': form, 'profile_base': base_tpl})

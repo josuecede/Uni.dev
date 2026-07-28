@@ -44,6 +44,18 @@
     <div class="card">
       <div class="card-header"><h3 class="card-title">Galería de imágenes</h3></div>
       <div class="card-body">
+        {% if product.image %}
+        <div class="mb-3">
+          <label class="text-muted small">Portada principal</label>
+          <div class="position-relative" style="border:2px solid var(--admin-primary);border-radius:8px;overflow:hidden;">
+            <img src="{{ product.image.url }}" class="w-100" style="height:180px;object-fit:cover;display:block;">
+            <div class="d-flex gap-1 p-1" style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);">
+              <button class="btn btn-xs btn-info replace-cover" title="Reemplazar portada"><i class="fas fa-edit"></i></button>
+              <button class="btn btn-xs btn-danger clear-cover" title="Quitar portada"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+        </div>
+        {% endif %}
         <div id="imageGallery" class="row g-2 mb-3">
           {% for img in product.images.all %}
           <div class="col-6" id="img-{{ img.id }}">
@@ -140,6 +152,40 @@ $(function() {
     $('.replace-img').on('click', function() {
         replaceId = $(this).data('id');
         $('#replaceInput').click();
+    });
+
+    $('.clear-cover').on('click', function() {
+        if (!confirm('¿Quitar la portada principal?')) return;
+        $.post('{% url "dashboard:product_clear_cover" %}', {
+            csrfmiddlewaretoken: getCSRFToken(),
+            product_id: productId
+        }, function() { location.reload(); });
+    });
+
+    var coverReplaceInput = document.createElement('input');
+    coverReplaceInput.type = 'file';
+    coverReplaceInput.accept = 'image/*';
+    coverReplaceInput.style.display = 'none';
+    document.body.appendChild(coverReplaceInput);
+    $('.replace-cover').on('click', function() {
+        coverReplaceInput.click();
+    });
+    coverReplaceInput.addEventListener('change', function() {
+        if (!this.files.length) return;
+        var fd = new FormData();
+        fd.append('product_id', productId);
+        fd.append('image', this.files[0]);
+        fd.append('csrfmiddlewaretoken', getCSRFToken());
+        $.ajax({
+            url: '{% url "dashboard:product_replace_cover" %}',
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            success: function(r) { location.reload(); },
+            error: function() { alert('Error al reemplazar portada'); }
+        });
+        this.value = '';
     });
 });
 </script>

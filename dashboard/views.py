@@ -317,6 +317,32 @@ def product_delete_image(request):
 
 
 @staff_required
+def product_clear_cover(request):
+    if request.method == 'POST':
+        product = get_object_or_404(Product, id=request.POST.get('product_id'))
+        if product.image:
+            product.image.delete(save=False)
+            product.image = None
+            product.save()
+            return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+
+@staff_required
+def product_replace_cover(request):
+    if request.method == 'POST':
+        product = get_object_or_404(Product, id=request.POST.get('product_id'))
+        new_file = request.FILES.get('image')
+        if new_file:
+            if product.image:
+                product.image.delete(save=False)
+            product.image = new_file
+            product.save()
+            return JsonResponse({'success': True, 'url': product.image.url})
+    return JsonResponse({'success': False}, status=400)
+
+
+@staff_required
 def product_replace_image(request):
     if request.method == 'POST':
         img = get_object_or_404(ProductImage, id=request.POST.get('image_id'))
