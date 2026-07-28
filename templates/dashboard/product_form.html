@@ -66,6 +66,7 @@
                 <button class="btn btn-xs btn-primary set-primary" data-id="{{ img.id }}" title="Portada principal"><i class="fas fa-star"></i></button>
                 {% endif %}
                 <button class="btn btn-xs btn-info replace-img" data-id="{{ img.id }}" title="Reemplazar imagen"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-xs btn-success set-as-cover" data-id="{{ img.id }}" title="Usar como portada principal"><i class="fas fa-image"></i></button>
                 <button class="btn btn-xs btn-danger delete-img" data-id="{{ img.id }}" title="Eliminar"><i class="fas fa-trash"></i></button>
               </div>
               {% if img.is_primary %}<small class="text-warning px-1" style="position:absolute;top:0;left:0;background:rgba(0,0,0,0.6);border-radius:0 0 4px 0;font-size:10px;">PRINCIPAL</small>{% endif %}
@@ -152,6 +153,15 @@ $(function() {
     $('.replace-img').on('click', function() {
         replaceId = $(this).data('id');
         $('#replaceInput').click();
+    });
+
+    $('.set-as-cover').on('click', function() {
+        var id = $(this).data('id');
+        $.post('{% url "dashboard:product_set_image_as_cover" %}', {
+            csrfmiddlewaretoken: getCSRFToken(),
+            image_id: id,
+            product_id: productId
+        }, function() { location.reload(); });
     });
 
     $('.clear-cover').on('click', function() {

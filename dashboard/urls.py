@@ -19,6 +19,7 @@ urlpatterns = [
     path('productos/agregar-imagen/', views.product_add_image, name='product_add_image'),
     path('productos/eliminar-imagen/', views.product_delete_image, name='product_delete_image'),
     path('productos/imagen-principal/', views.product_set_primary, name='product_set_primary'),
+    path('productos/imagen-a-portada/', views.product_set_image_as_cover, name='product_set_image_as_cover'),
     path('productos/reemplazar-imagen/', views.product_replace_image, name='product_replace_image'),
     path('productos/limpiar-portada/', views.product_clear_cover, name='product_clear_cover'),
     path('productos/reemplazar-portada/', views.product_replace_cover, name='product_replace_cover'),

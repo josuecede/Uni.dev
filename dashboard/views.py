@@ -317,6 +317,24 @@ def product_delete_image(request):
 
 
 @staff_required
+def product_set_image_as_cover(request):
+    if request.method == 'POST':
+        product = get_object_or_404(Product, id=request.POST.get('product_id'))
+        img = get_object_or_404(ProductImage, id=request.POST.get('image_id'), product=product)
+        from django.core.files.base import ContentFile
+        img.image.open()
+        content = img.image.read()
+        new_name = f'cover_{img.id}_{img.image.name.split("/")[-1]}'
+        if product.image:
+            product.image.delete(save=False)
+        product.image.save(new_name, ContentFile(content), save=False)
+        img.image.close()
+        product.save()
+        return JsonResponse({'success': True, 'url': product.image.url})
+    return JsonResponse({'success': False}, status=400)
+
+
+@staff_required
 def product_clear_cover(request):
     if request.method == 'POST':
         product = get_object_or_404(Product, id=request.POST.get('product_id'))

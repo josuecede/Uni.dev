@@ -14,7 +14,7 @@ class CustomUserAdmin(UserAdmin):
         ('Información adicional', {'fields': ('role', 'profile_picture', 'phone_number', 'bio', 'address')}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ('Información adicional', {'fields': ('role', 'profile_picture', 'phone_number', 'bio', 'address')}),
+        ('Información adicional', {'fields': ('role', 'email', 'first_name', 'last_name')}),
     )
 
 
